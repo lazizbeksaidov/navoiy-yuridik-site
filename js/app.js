@@ -46,6 +46,8 @@
 
   /* ---------- helpers ---------- */
   const catOfOrg = o => /dmtt/i.test(o.org) ? 'dmtt' : /^\d+\s*-?\s*maktab/i.test(o.org) ? 'maktab' : 'other';
+  const isCity = d => /shahri/i.test(d.name);
+  const CITY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h4"/><path d="M18 9h2a2 2 0 0 1 2 2v11h-4"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>';
 
   // qidiruv so'rovini normallashtirish: kirill kiritilsa lotinga o'girish
   const C2L = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'j','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'x','ц':'ts','ч':'ch','ш':'sh','щ':'sh','ъ':'ʼ','ь':'','э':'e','ю':'yu','я':'ya','ў':'oʻ','қ':'q','ғ':'gʻ','ҳ':'h','ы':'i' };
@@ -220,13 +222,19 @@
           <span class="float-chip c3"><b>${totalStaff}</b> markaz xodimi</span>
         </div>
       </section>
-      <h2 class="section-title rv" id="hududlar"><span class="bar"></span>Hududlar</h2>
+      ${[
+        { title: 'Shaharlar', items: DATA.districts.filter(isCity), anchor: 'hududlar' },
+        { title: 'Tumanlar', items: DATA.districts.filter(d => !isCity(d)), anchor: '' }
+      ].map(g => `
+      <h2 class="section-title rv" ${g.anchor ? `id="${g.anchor}"` : ''}><span class="bar"></span>${g.title}
+        <span class="count">${g.items.length}</span></h2>
       <div class="district-grid">
-        ${DATA.districts.map(d => `
-          <a class="district-card tilt rv" href="#/hudud/${d.id}">
+        ${g.items.map(d => `
+          <a class="district-card tilt rv${isCity(d) ? ' city' : ''}" href="#/hudud/${d.id}">
+            <span class="dc-type">${isCity(d) ? 'Shahar' : 'Tuman'}</span>
             <div class="dc-top">
-              <span class="dc-icon">${ICONS.pin}</span>
-              <h3>${esc(d.name)}</h3>
+              <span class="dc-icon">${isCity(d) ? CITY_ICON : ICONS.pin}</span>
+              <h3>${esc(d.name.replace(/ (shahri|tumani)$/i, ''))}</h3>
             </div>
             <div class="district-meta">
               <span>${d.markaz.length} markaz xodimi</span>
@@ -234,7 +242,7 @@
             </div>
             <span class="go">Batafsil <span aria-hidden="true">→</span></span>
           </a>`).join('')}
-      </div>
+      </div>`).join('')}
       <h2 class="section-title rv"><span class="bar"></span>Tashkilotlar soni — hududlar kesimida</h2>
       <section class="hero rv chart-wrap" style="padding:26px 30px">
         ${[...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).map(d => {
@@ -717,12 +725,18 @@
     <div class="ds"><b>${tStaff}</b><span>xodim</span></div>
     <div class="ds"><b>${tOrgs}</b><span>tashkilot</span></div>`;
 
-  // hudud havolalari
-  document.getElementById('drawerLinks').innerHTML = DATA.districts.map(d =>
-    `<a href="#/hudud/${d.id}">
-       <span class="mini">${esc(d.name[0])}</span>${esc(d.name)}
-       <span class="cnt">${d.orgs.length}</span>
-     </a>`).join('');
+  // hudud havolalari — shahar/tuman guruhlari bilan
+  document.getElementById('drawerLinks').innerHTML = [
+    { label: 'Shaharlar', items: DATA.districts.filter(isCity) },
+    { label: 'Tumanlar', items: DATA.districts.filter(d => !isCity(d)) }
+  ].map(g => `
+    <div class="dl-group">${g.label}<i></i><b>${g.items.length}</b></div>
+    ${g.items.map(d =>
+      `<a href="#/hudud/${d.id}">
+         <span class="mini${isCity(d) ? ' city' : ''}">${isCity(d) ? CITY_ICON : esc(d.name[0])}</span>
+         ${esc(d.name)}
+         <span class="cnt">${d.orgs.length}</span>
+       </a>`).join('')}`).join('');
   document.getElementById('drawerLinks').addEventListener('click', () => setDrawer(false));
 
   // qulayliklar

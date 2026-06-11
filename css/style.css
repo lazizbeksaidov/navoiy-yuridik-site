@@ -369,6 +369,55 @@ body.dark .top-btn .ic-moon { display: none; }
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,.6) inset;
   border-color: #fff;
 }
+/* Shahar/Tuman turi belgisi */
+.dc-type {
+  position: absolute; right: 14px; top: 14px; z-index: 1;
+  font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  padding: 4px 11px; border-radius: 999px;
+  color: var(--navy-light);
+  background: rgba(231, 237, 251, .85);
+  border: 1px solid rgba(170, 192, 235, .55);
+}
+.district-card.city .dc-type {
+  color: #8a6a12;
+  background: rgba(250, 243, 221, .9);
+  border-color: rgba(212, 175, 55, .5);
+}
+/* Shahar kartasi — oltin identitet */
+.district-card.city::before {
+  background: radial-gradient(circle, rgba(201, 162, 39, .16), transparent 70%);
+}
+.district-card.city .dc-icon {
+  background: linear-gradient(145deg, #fdf6e0, #f1e3b3);
+  border-color: #fff;
+  box-shadow: 0 6px 16px rgba(168, 130, 26, .25), inset 0 1px 0 #fff;
+}
+.district-card.city .dc-icon svg { color: #a8821a; }
+.district-card.city {
+  background:
+    linear-gradient(150deg, rgba(255, 252, 243, .9), rgba(253, 248, 232, .55)) padding-box,
+    conic-gradient(from var(--ga),
+      rgba(201, 162, 39, .75), rgba(255,255,255,.9) 25%,
+      rgba(212, 175, 55, .65) 50%, rgba(255,255,255,.9) 75%,
+      rgba(201, 162, 39, .75)) border-box;
+}
+.district-card.city .go { color: #a8821a; }
+.district-card.city:hover .go { color: #8a6a12; }
+body.dark .district-card.city {
+  background:
+    linear-gradient(150deg, rgba(58, 48, 24, .85), rgba(38, 33, 20, .7)) padding-box,
+    conic-gradient(from var(--ga),
+      rgba(201, 162, 39, .6), rgba(120, 100, 40, .3) 25%,
+      rgba(227, 198, 104, .55) 50%, rgba(120, 100, 40, .3) 75%,
+      rgba(201, 162, 39, .6)) border-box;
+}
+body.dark .district-card.city .dc-icon { background: linear-gradient(145deg, #4d3f17, #33290e); }
+body.dark .district-card.city .dc-icon svg { color: #e3c668; }
+body.dark .district-card.city h3 { color: #f2e3b8; }
+body.dark .district-card.city .dc-type { color: #e3c668; background: rgba(77, 63, 23, .8); border-color: rgba(201,162,39,.4); }
+body.dark .district-card.city .district-meta span { color: #d8c684; background: rgba(58, 48, 24, .8); border-color: rgba(201,162,39,.3); }
+body.dark .district-card.city .go { color: #e3c668; }
+
 .dc-top { display: flex; align-items: center; gap: 14px; }
 .dc-icon {
   width: 50px; height: 50px; flex: 0 0 50px; border-radius: 15px;
@@ -867,6 +916,22 @@ body.drawer-open .drawer { transform: translateX(0); }
 .drawer-stats .ds b { display: block; font-size: 19px; color: var(--navy); }
 .drawer-stats .ds span { font-size: 10.5px; color: var(--muted); font-weight: 600; }
 .drawer-links { display: flex; flex-direction: column; gap: 5px; }
+.dl-group {
+  display: flex; align-items: center; gap: 9px;
+  margin: 9px 2px 4px;
+  font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--muted);
+}
+.dl-group:first-child { margin-top: 0; }
+.dl-group i { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(160,180,220,.45), transparent); }
+.dl-group b { font-size: 10.5px; color: var(--navy); }
+.drawer-links a .mini.city {
+  background: linear-gradient(145deg, #fdf6e0, #f1e3b3);
+  color: #a8821a;
+}
+.drawer-links a .mini.city svg { width: 13px; height: 13px; }
+body.dark .drawer-links a .mini.city { background: linear-gradient(145deg, #4d3f17, #33290e); color: #e3c668; border-color: rgba(201,162,39,.35); }
+body.dark .dl-group b { color: #c7d6f5; }
 .drawer-links a {
   display: flex; align-items: center; gap: 11px;
   padding: 9px 13px; border-radius: 11px;
