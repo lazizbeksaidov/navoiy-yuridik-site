@@ -2113,3 +2113,61 @@ body.dark .donut-panel .legend .li b { color: #c7d6f5; }
 .stack-rows.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 28px; }
 @media (max-width: 720px) { .stack-rows.two-col { grid-template-columns: 1fr; } }
 .stack-row .sbar i { box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+
+/* ============================================================
+   E'lon banneri, tug'ilgan kunlar, tashkilot qo'shish/o'chirish
+   ============================================================ */
+#annBanner { display: flex; align-items: center; gap: 12px; margin: 16px 0 0;
+  padding: 13px 18px; border-radius: 15px;
+  background: linear-gradient(135deg, rgba(201,162,39,.16), rgba(201,162,39,.06));
+  border: 1px solid rgba(201,162,39,.4); box-shadow: var(--shadow-sm); animation: aiIn .4s ease; }
+#annBanner[hidden] { display: none; }
+.ann-ic { width: 34px; height: 34px; flex:0 0 34px; border-radius: 10px; display:flex; align-items:center; justify-content:center;
+  color:#fff; background: linear-gradient(135deg,#d4af37,#a8821a); box-shadow: var(--shadow-sm); }
+.ann-ic svg { width: 18px; height: 18px; }
+.ann-text { flex: 1; font-size: 14px; font-weight: 600; color: var(--navy-dark); line-height: 1.45; }
+body.dark .ann-text { color: #f2e3b8; }
+.ann-close { width: 30px; height: 30px; flex:0 0 30px; border-radius: 9px; cursor: pointer;
+  border: 1px solid rgba(201,162,39,.4); background: rgba(255,255,255,.5); color: #8a6a12; font-size: 13px; }
+body.dark .ann-close { background: rgba(77,63,23,.5); color: #e3c668; }
+
+.bday-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px,100%),1fr)); gap: 14px; }
+.bday-card { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-radius: 16px; text-decoration: none;
+  background: linear-gradient(150deg, rgba(255,255,255,.78), rgba(255,255,255,.5));
+  border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.9);
+  transition: transform .3s cubic-bezier(.22,.9,.3,1.4), box-shadow .3s; }
+.bday-card:hover { transform: translateY(-4px) scale(1.012); box-shadow: var(--shadow-md); }
+body.dark .bday-card { background: linear-gradient(150deg, rgba(28,42,76,.72), rgba(20,32,60,.55)); border-color: rgba(120,145,195,.3); }
+.bday-photo { width: 50px; height: 56px; flex:0 0 50px; border-radius: 12px; overflow: hidden; background: linear-gradient(160deg,#e6ecf9,#f2f5fb);
+  display:flex; align-items:center; justify-content:center; color:#9fb1d4; border: 1px solid var(--glass-border); }
+.bday-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.bday-photo svg { width: 26px; height: 26px; }
+.bday-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bday-info b { font-size: 13.5px; color: var(--navy-dark); line-height: 1.3; }
+body.dark .bday-info b { color: #dbe6ff; }
+.bday-info span { font-size: 11.5px; color: var(--muted); }
+.bday-day { flex:0 0 auto; text-align: center; padding: 5px 11px; border-radius: 11px;
+  background: linear-gradient(135deg,#faf3dd,#f0e2b0); border: 1px solid rgba(201,162,39,.35); }
+.bday-day b { display: block; font-size: 18px; color: #a8821a; font-family: 'Manrope',sans-serif; line-height: 1; }
+.bday-day i { font-size: 10px; font-style: normal; color: #b58f22; font-weight: 700; }
+body.dark .bday-day { background: linear-gradient(135deg,#4d3f17,#33290e); }
+body.dark .bday-day b, body.dark .bday-day i { color: #e3c668; }
+
+/* Tashkilot qo'shish tugmasi (org-tools) */
+.org-add { display: none; align-items: center; gap: 6px; margin-left: auto;
+  padding: 9px 15px; border-radius: 11px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700;
+  color: #fff; background: linear-gradient(135deg, #2c9568, var(--green)); border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 6px 16px rgba(21,115,71,.3); }
+.org-add svg { width: 15px; height: 15px; }
+.org-add:hover { transform: translateY(-2px); }
+body.admin .org-add { display: inline-flex; }
+/* Tashkilot o'chirish (karta ustida) */
+.orgc { position: relative; }
+.orgc-del { display: none; position: absolute; right: 8px; top: 8px; z-index: 4; width: 28px; height: 28px;
+  border-radius: 9px; align-items: center; justify-content: center; background: rgba(251,227,225,.95);
+  border: 1px solid rgba(179,38,30,.3); color: #b3261e; cursor: pointer; }
+.orgc-del svg { width: 14px; height: 14px; }
+.orgc-del:hover { background: #fbe3e1; transform: scale(1.1); }
+body.admin .orgc-del { display: inline-flex; }
+body.admin .orgc .orgc-go { margin-right: 32px; }
+body.dark .orgc-del { background: rgba(77,33,30,.9); border-color: rgba(179,38,30,.4); color: #e89a94; }

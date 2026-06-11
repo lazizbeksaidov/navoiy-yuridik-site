@@ -116,10 +116,10 @@
   const navEl = document.getElementById('districtNav');
   const searchInput = document.getElementById('globalSearch');
 
-  // Server rejimida tahrirlarni umumiy bazaga yozish
+  // Server rejimida tahrirlarni umumiy bazaga yozish (e'lon ham saqlanadi)
   async function pushData() {
     if (!authCtx) return;
-    const clean = JSON.parse(JSON.stringify({ districts: DATA.districts },
+    const clean = JSON.parse(JSON.stringify({ districts: DATA.districts, announcement: DATA.announcement || null },
       (k, v) => k.startsWith('_') ? undefined : v));
     const { error } = await authCtx.client.from('site_data')
       .update({ data: clean, updated_by: authCtx.profile ? authCtx.profile.login : 'admin', updated_at: new Date().toISOString() })
@@ -163,6 +163,26 @@
     team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     calc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01"/></svg>'
   };
+
+  /* ---------- E'lon banneri ---------- */
+  function showAnnouncement() {
+    const ann = DATA.announcement;
+    const banner = document.getElementById('annBanner');
+    if (!banner) return;
+    if (!ann || !ann.text) { banner.hidden = true; return; }
+    let dismissed = '';
+    try { dismissed = localStorage.getItem('annDismissed') || ''; } catch (e) {}
+    if (dismissed === String(ann.ts)) { banner.hidden = true; return; }
+    document.getElementById('annText').textContent = ann.text;
+    banner.hidden = false;
+  }
+  (function initAnnBanner() {
+    const c = document.getElementById('annClose');
+    if (c) c.addEventListener('click', () => {
+      document.getElementById('annBanner').hidden = true;
+      try { localStorage.setItem('annDismissed', String(DATA.announcement?.ts || '')); } catch (e) {}
+    });
+  })();
 
   /* ---------- helpers ---------- */
   const catOfOrg = o => /dmtt/i.test(o.org) ? 'dmtt' : /^\d+\s*-?\s*maktab/i.test(o.org) ? 'maktab' : 'other';
@@ -254,6 +274,9 @@
         <span class="orgc-name">${esc(o.org)}</span>
         <span class="orgc-sub">${o.r.fio ? esc(o.r.fio) : 'Rahbar koʻrsatilmagan'}</span>
       </span>
+      <button class="orgc-del edit-btn" data-orgdel data-d="${o._di}" data-i="${o._oi}" title="Tashkilotni oʻchirish" aria-label="Oʻchirish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>
       <span class="orgc-go" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </span>
@@ -309,6 +332,34 @@
     </div>`;
   }
 
+  /* ---------- Shu oyda tug'ilganlar ---------- */
+  const MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+  function birthdaysHTML() {
+    const mon = new Date().getMonth() + 1;
+    const list = [];
+    DATA.districts.forEach(d => d.markaz.forEach(s => {
+      if (!s.tug) return;
+      const m = s.tug.match(/^(\d{1,2})\.(\d{1,2})\./);
+      if (m && +m[2] === mon) list.push({ s, d, day: +m[1] });
+    }));
+    if (!list.length) return '';
+    list.sort((a, b) => a.day - b.day);
+    return `
+      <h2 class="section-title rv"><span class="bar"></span>🎂 ${MONTHS[mon-1]} oyida tugʻilganlar
+        <span class="count">${list.length}</span></h2>
+      <div class="bday-grid">
+        ${list.map(({ s, d, day }) => `
+          <a class="bday-card rv" href="#/hudud/${d.id}">
+            <span class="bday-photo">${s.photo ? `<img src="${esc(s.photo)}" alt="" loading="lazy">` : ICONS.user}</span>
+            <span class="bday-info">
+              <b>${esc(s.fio)}</b>
+              <span>${esc(d.name)}</span>
+            </span>
+            <span class="bday-day"><b>${day}</b><i>${MONTHS[mon-1].slice(0,3)}</i></span>
+          </a>`).join('')}
+      </div>`;
+  }
+
   /* ---------- views ---------- */
   function renderHome() {
     const totalOrgs = DATA.districts.reduce((a, d) => a + d.orgs.length, 0);
@@ -342,6 +393,7 @@
           <span class="float-chip c3"><b>${totalStaff}</b> markaz xodimi</span>
         </div>
       </section>
+      ${birthdaysHTML()}
       ${[
         { title: 'Shaharlar', items: DATA.districts.filter(isCity), anchor: 'hududlar' },
         { title: 'Tumanlar', items: DATA.districts.filter(d => !isCity(d)), anchor: '' }
@@ -404,6 +456,9 @@
           <button class="fchip" data-f="other">Boshqa tashkilotlar</button>
         </div>
         <span class="org-count" id="orgCount">${d.orgs.length} ta tashkilot</span>
+        <button class="org-add edit-btn" id="orgAddBtn" data-d="${d.id}" title="Yangi tashkilot qoʻshish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Tashkilot qoʻshish
+        </button>
       </div>
       <div class="orgc-grid" id="orgList">
         ${d.orgs.map((o, i) => orgCard(o, i + 1)).join('')}
@@ -950,7 +1005,6 @@
   document.getElementById('drawerLinks').addEventListener('click', () => setDrawer(false));
 
   // qulayliklar
-  document.getElementById('toolPrint').addEventListener('click', () => { setDrawer(false); setTimeout(() => window.print(), 350); });
   const fontBtn = document.getElementById('toolFont');
   fontBtn.addEventListener('click', () => {
     const big = document.body.classList.toggle('big');
@@ -1065,6 +1119,54 @@
   });
 
   /* ---------- Excel (CSV) eksport ---------- */
+  /* ---------- CSV import (tashkilotlarni ommaviy yangilash) ---------- */
+  function parseCSV(text) {
+    const rows = []; let row = [], cur = '', q = false;
+    text = text.replace(/^﻿/, '');
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+        else cur += c;
+      } else {
+        if (c === '"') q = true;
+        else if (c === ';') { row.push(cur); cur = ''; }
+        else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else if (c === '\r') { /* skip */ }
+        else cur += c;
+      }
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+  function importCSV(text) {
+    const rows = parseCSV(text);
+    if (!rows.length || (rows[0][0] || '').toLowerCase().indexOf('hudud') === -1 && (rows[0][0] || '').toLowerCase().indexOf('ҳудуд') === -1)
+      return { error: 'CSV sarlavhasi notoʻgʻri (Hudud ustuni topilmadi). Avval "Excel yuklab olish" bilan namuna oling.' };
+    const nm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const eq = (a, b) => { const x = nm(a), y = nm(b); return x && (x === y || nm(lat2cyr(a)) === y || x === nm(lat2cyr(b))); };
+    const tel = s => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
+    let updated = 0, added = 0;
+    const touched = new Set();
+    for (let r = 1; r < rows.length; r++) {
+      const c = rows[r];
+      const hudud = (c[0] || '').trim(), org = (c[2] || '').trim();
+      if (!hudud || !org) continue;
+      if (/yuridik xizmat|юридик хизмат/i.test(org)) continue; // markaz qatori
+      const d = DATA.districts.find(x => eq(x.name, hudud));
+      if (!d) continue;
+      const rec = { fio: (c[3] || '').trim(), rtel: tel(c[4]), kfio: (c[5] || '').trim(), ktel: tel(c[6]), bfio: (c[7] || '').trim(), btel: tel(c[8]) };
+      let o = d.orgs.find(x => eq(x.org, org));
+      if (o) { updated++; } else { o = { org }; d.orgs.push(o); added++; }
+      o.r = { fio: rec.fio, tel: rec.rtel };
+      o.k = { fio: rec.kfio, tel: rec.ktel };
+      o.b = { fio: rec.bfio, tel: rec.btel };
+      touched.add(d);
+    }
+    touched.forEach(d => d.orgs.forEach((o, i) => { o._di = d.id; o._oi = i; }));
+    return { updated, added };
+  }
+
   document.getElementById('toolExcel').addEventListener('click', () => {
     const m = (location.hash || '').match(/^#\/hudud\/([a-z]+)/);
     const dists = m ? DATA.districts.filter(d => d.id === m[1]) : DATA.districts;
@@ -1339,6 +1441,37 @@
     }
   });
 
+  /* ---------- Tashkilot qoʻshish / oʻchirish (admin) ---------- */
+  function reindexOrgs(d) { d.orgs.forEach((o, i) => { o._di = d.id; o._oi = i; }); }
+
+  app.addEventListener('click', async e => {
+    if (!authCtx || !document.body.classList.contains('admin')) return;
+    const del = e.target.closest('[data-orgdel]');
+    const add = e.target.closest('#orgAddBtn');
+    if (del) {
+      e.preventDefault(); e.stopPropagation();
+      const d = DATA.districts.find(x => x.id === del.dataset.d);
+      const o = d && d.orgs[+del.dataset.i];
+      if (!o) return;
+      if (!confirm(`"${o.org}" tashkiloti oʻchirilsinmi? Bu amalni qaytarib boʻlmaydi.`)) return;
+      d.orgs.splice(+del.dataset.i, 1);
+      reindexOrgs(d);
+      await pushData();
+      route();
+    }
+    if (add) {
+      e.preventDefault(); e.stopPropagation();
+      const d = DATA.districts.find(x => x.id === add.dataset.d);
+      if (!d) return;
+      const name = prompt('Yangi tashkilot nomi (masalan: 50-maktab yoki Soliq boʻlimi):');
+      if (!name || !name.trim()) return;
+      d.orgs.push({ org: name.trim(), r: { fio: '', tel: [] }, k: { fio: '', tel: [] }, b: { fio: '', tel: [] } });
+      reindexOrgs(d);
+      await pushData();
+      location.hash = `#/hudud/${d.id}/t/${d.orgs.length - 1}`;
+    }
+  }, true);
+
   // data.js eksport (tahrirlangan holatda)
   document.getElementById('adminExport').addEventListener('click', () => {
     const json = JSON.stringify({ districts: DATA.districts },
@@ -1362,6 +1495,39 @@
   if (authCtx && authCtx.profile && authCtx.profile.is_admin) {
     const uBtn = document.getElementById('adminUsers');
     uBtn.hidden = false;
+
+    /* E'lon (banner) boshqaruvi */
+    const annBtn = document.getElementById('adminAnnounce');
+    annBtn.hidden = false;
+    annBtn.addEventListener('click', async () => {
+      const cur = DATA.announcement?.text || '';
+      const txt = prompt('Eʼlon matni (barcha xodimlar koʻradi). Boʻsh qoldirsangiz — eʼlon oʻchiriladi:', cur);
+      if (txt === null) return;
+      DATA.announcement = txt.trim() ? { text: txt.trim(), ts: Date.now() } : null;
+      await pushData();
+      try { localStorage.removeItem('annDismissed'); } catch (e) {}
+      showAnnouncement();
+      setDrawer(false);
+    });
+
+    /* Excel (CSV) yuklash — tashkilotlarni ommaviy yangilash */
+    const impBtn = document.getElementById('adminImport');
+    impBtn.hidden = false;
+    const impFile = document.getElementById('importFile');
+    impBtn.addEventListener('click', () => impFile.click());
+    impFile.addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      e.target.value = '';
+      const res = importCSV(text);
+      if (res.error) { alert('Xato: ' + res.error); return; }
+      if (!confirm(`CSV oʻqildi:\n• ${res.updated} ta tashkilot yangilanadi\n• ${res.added} ta yangi qoʻshiladi\nDavom etilsinmi?`)) return;
+      await pushData();
+      alert(`Tayyor! ${res.updated} yangilandi, ${res.added} qoʻshildi.`);
+      route();
+    });
+
     const modal = document.getElementById('umModal');
     const msg = document.getElementById('umMsg');
     const listPane = document.getElementById('umList');
@@ -1580,6 +1746,7 @@
   })();
 
   route();
+  showAnnouncement();
   }
 
   bootstrap();
