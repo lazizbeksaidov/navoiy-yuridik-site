@@ -1,7 +1,5 @@
-// Supabase ulanish sozlamalari.
-// Bo'sh qoldirilsa — sayt ochiq rejimda ishlaydi (login talab qilinmaydi).
-// Supabase loyihasi yaratilgach URL va anon key shu yerga yoziladi.
+// Supabase ulanish sozlamalari (publishable key — ochiq bo'lishi xavfsiz, himoya RLS da)
 window.AUTH_CONFIG = {
-  url: '',
-  anonKey: ''
+  url: 'https://wilwmcigtdpnzmugpumy.supabase.co',
+  anonKey: 'sb_publishable_MrtUpH_o6ojtjpPc5UusMg_alWIQa_u'
 };
