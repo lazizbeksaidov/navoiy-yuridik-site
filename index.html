@@ -9,7 +9,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=17">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f3b73">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Navoiy Adliya">
+<link rel="stylesheet" href="css/style.css?v=19">
 </head>
 <body>
 
@@ -172,12 +177,16 @@
         <span class="ti g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>
         data.js olish
       </button>
+      <button class="tool-btn full" id="adminUsers" data-admin-srv hidden>
+        <span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        Xodimlar (login/parol)
+      </button>
       <button class="tool-btn" id="adminReset" data-admin-only>
         <span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>
         Bekor qilish
       </button>
     </div>
-    <p class="admin-note" data-admin-only>Oʻzgarishlar shu brauzerda saqlanadi. Saytga doimiy joylash uchun «data.js olish» tugmasi bilan faylni yuklab oling.</p>
+    <p class="admin-note" data-admin-only>Tahrirlar bevosita umumiy bazaga yoziladi.</p>
   </div>
   <div class="drawer-foot">
     Navoiy viloyati yuridik xizmat koʻrsatish markazlari · maʼlumotnoma
@@ -211,6 +220,34 @@
   </form>
 </div>
 
+
+<!-- ============ Admin: foydalanuvchilar boshqaruvi ============ -->
+<div class="um-modal" id="umModal" hidden>
+  <div class="um-box">
+    <div class="um-head">
+      <b>Xodimlar — login va parol</b>
+      <button id="umClose" aria-label="Yopish">✕</button>
+    </div>
+    <div class="um-tabs">
+      <button class="um-tab active" data-tab="list">Roʻyxat</button>
+      <button class="um-tab" data-tab="add">Yangi qoʻshish</button>
+    </div>
+    <div class="um-body">
+      <div class="um-pane" id="umList"></div>
+      <div class="um-pane" id="umAdd" hidden>
+        <label>F.I.O.<input id="umFio" placeholder="Familiya Ism Otasining ismi"></label>
+        <label>Hudud<input id="umDist" placeholder="masalan: Navoiy shahri"></label>
+        <label>Lavozim<input id="umPos" placeholder="Bosh yuriskonsult"></label>
+        <label>Login<input id="umLogin" placeholder="familiya.ism" autocapitalize="off"></label>
+        <label>Parol<input id="umPass" placeholder="kamida 6 belgi"></label>
+        <label class="um-chk"><input type="checkbox" id="umAdminChk"> Admin huquqi (tahrirlash)</label>
+        <button class="um-save" id="umAddBtn">Qoʻshish</button>
+      </div>
+    </div>
+    <div class="um-msg" id="umMsg" hidden></div>
+  </div>
+</div>
+
 <button class="to-top" id="toTop" aria-label="Yuqoriga"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button>
 
 <footer class="footer">
@@ -232,9 +269,14 @@
 </footer>
 
 <script src="js/supabase.min.js"></script>
-<script src="js/auth-config.js?v=17"></script>
+<script src="js/auth-config.js?v=19"></script>
 <script src="js/qrcode.min.js"></script>
 <script src="js/motion.min.js"></script>
-<script src="js/app.js?v=17"></script>
+<script src="js/app.js?v=19"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
 </body>
 </html>

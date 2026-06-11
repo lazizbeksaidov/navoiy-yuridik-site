@@ -1211,6 +1211,100 @@
     }
   });
 
+  /* ---------- Admin: foydalanuvchilar boshqaruvi ---------- */
+  if (authCtx && authCtx.profile && authCtx.profile.is_admin) {
+    const uBtn = document.getElementById('adminUsers');
+    uBtn.hidden = false;
+    const modal = document.getElementById('umModal');
+    const msg = document.getElementById('umMsg');
+    const listPane = document.getElementById('umList');
+
+    async function callAdmin(action, payload) {
+      const { data: { session } } = await authCtx.client.auth.getSession();
+      const res = await fetch(CFG.url + '/functions/v1/admin', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload })
+      });
+      return res.json();
+    }
+    function showMsg(text, ok) {
+      msg.textContent = text; msg.className = 'um-msg ' + (ok ? 'ok' : 'err'); msg.hidden = false;
+      setTimeout(() => { msg.hidden = true; }, 4000);
+    }
+    let allUsers = [];
+    function renderList(filter) {
+      const f = (filter || '').toLowerCase();
+      const items = allUsers.filter(u => !f || (u.fio + ' ' + u.login + ' ' + (u.district||'')).toLowerCase().includes(f));
+      listPane.innerHTML = '<input class="um-search" id="umSearch" placeholder="Qidirish: ism, login, hudud...">' +
+        items.map(u => `<div class="um-row${u.is_admin ? ' adm' : ''}">
+          <span class="ui">${esc((u.fio||'?')[0])}</span>
+          <span class="uinfo"><b>${esc(u.fio)}</b><span>${esc(u.login)} · ${esc(u.district||'')}${u.is_admin?' · admin':''}</span></span>
+          <span class="uact">
+            <button class="pwd" data-login="${esc(u.login)}" title="Parol oʻzgartirish">🔑</button>
+            ${u.login !== 'admin' ? `<button class="del" data-login="${esc(u.login)}" data-fio="${esc(u.fio)}" title="Oʻchirish">🗑</button>` : ''}
+          </span>
+        </div>`).join('');
+      const s = document.getElementById('umSearch');
+      if (s) { s.value = filter || ''; s.oninput = () => renderList(s.value); if (filter) s.focus(); }
+    }
+    async function loadUsers() {
+      listPane.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px">Yuklanmoqda...</div>';
+      const r = await callAdmin('list');
+      allUsers = r.users || [];
+      renderList('');
+    }
+
+    uBtn.addEventListener('click', () => { setDrawer(false); modal.hidden = false; loadUsers(); });
+    document.getElementById('umClose').addEventListener('click', () => modal.hidden = true);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+
+    modal.querySelectorAll('.um-tab').forEach(t => t.addEventListener('click', () => {
+      modal.querySelectorAll('.um-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('umList').hidden = t.dataset.tab !== 'list';
+      document.getElementById('umAdd').hidden = t.dataset.tab !== 'add';
+    }));
+
+    listPane.addEventListener('click', async e => {
+      const pwd = e.target.closest('.pwd');
+      const del = e.target.closest('.del');
+      if (pwd) {
+        const np = prompt(`"${pwd.dataset.login}" uchun yangi parol (kamida 6 belgi):`);
+        if (!np) return;
+        const r = await callAdmin('setPassword', { login: pwd.dataset.login, password: np });
+        showMsg(r.msg || r.error, !!r.ok);
+      }
+      if (del) {
+        if (!confirm(`"${del.dataset.fio}" (${del.dataset.login}) oʻchirilsinmi? Bu xodim endi kira olmaydi.`)) return;
+        const r = await callAdmin('removeUser', { login: del.dataset.login });
+        showMsg(r.msg || r.error, !!r.ok);
+        if (r.ok) loadUsers();
+      }
+    });
+
+    document.getElementById('umAddBtn').addEventListener('click', async function () {
+      const payload = {
+        fio: document.getElementById('umFio').value.trim(),
+        district: document.getElementById('umDist').value.trim(),
+        lavozim: document.getElementById('umPos').value.trim(),
+        login: document.getElementById('umLogin').value.trim().toLowerCase(),
+        password: document.getElementById('umPass').value,
+        is_admin: document.getElementById('umAdminChk').checked
+      };
+      this.disabled = true;
+      const r = await callAdmin('addUser', payload);
+      this.disabled = false;
+      showMsg(r.msg || r.error, !!r.ok);
+      if (r.ok) {
+        ['umFio','umDist','umPos','umLogin','umPass'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('umAdminChk').checked = false;
+        modal.querySelector('.um-tab[data-tab=list]').click();
+        loadUsers();
+      }
+    });
+  }
+
   /* ---------- AI yordamchi chat ---------- */
   (function initAiChat() {
     const fab = document.getElementById('aiFab');
@@ -1241,11 +1335,36 @@
       if (chips) chips.remove();
       const d = document.createElement('div');
       d.className = 'ai-msg ' + cls;
-      d.textContent = text;
+      if (cls === 'bot') {
+        // telefon raqamlarni interaktiv qilish (+998 XX XXX XX XX)
+        const re = /\+998[\s\d]{9,13}\d/g;
+        let last = 0, m;
+        while ((m = re.exec(text)) !== null) {
+          if (m.index > last) d.appendChild(document.createTextNode(text.slice(last, m.index)));
+          const tel = m[0].trim();
+          const pill = document.createElement('span');
+          pill.className = 'ai-tel';
+          pill.innerHTML = `<a href="tel:${tel.replace(/\s/g,'')}">${esc(tel)}</a>`
+            + `<button data-copy="${tel.replace(/\s/g,'')}" title="Nusxalash">📋</button>`;
+          d.appendChild(pill);
+          last = m.index + m[0].length;
+        }
+        if (last < text.length) d.appendChild(document.createTextNode(text.slice(last)));
+      } else {
+        d.textContent = text;
+      }
       body.appendChild(d);
       body.scrollTop = body.scrollHeight;
       return d;
     }
+    body.addEventListener('click', e => {
+      const b = e.target.closest('[data-copy]');
+      if (b) {
+        navigator.clipboard.writeText(b.dataset.copy);
+        const o = b.textContent; b.textContent = '✓';
+        setTimeout(() => { b.textContent = o; }, 1200);
+      }
+    });
 
     form.addEventListener('submit', async e => {
       e.preventDefault();
