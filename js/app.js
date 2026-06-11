@@ -2,17 +2,137 @@
 (function () {
   'use strict';
 
+  /* ============================================================
+     AUTH BOOTSTRAP — Supabase sozlangan bo'lsa, avval kirish darvozasi
+     ============================================================ */
+  const CFG = window.AUTH_CONFIG || {};
+
+  /* Splash kirish ekrani — darhol boshqariladi (gate'dan mustaqil) */
+  const splash = document.getElementById('splash');
+  if (sessionStorage.getItem('splashed')) {
+    splash.style.display = 'none';
+  } else {
+    setTimeout(() => {
+      splash.classList.add('done');
+      try { sessionStorage.setItem('splashed', '1'); } catch (e) {}
+      setTimeout(() => splash.remove(), 800);
+    }, 1450);
+  }
+
+  const gate = document.getElementById('authGate');
+  const gateForm = document.getElementById('authForm');
+  const gateErr = document.getElementById('authErr');
+  const gateBtn = document.getElementById('authBtn');
+  const gateCard = document.querySelector('.ag-card');
+
+  document.getElementById('authEye').addEventListener('click', () => {
+    const p = document.getElementById('authPass');
+    p.type = p.type === 'password' ? 'text' : 'password';
+  });
+
+  function gateShow() { gate.hidden = false; }
+  function gateHide() {
+    gate.classList.add('done');
+    setTimeout(() => gate.remove(), 800);
+  }
+  function gateError(msg) {
+    gateErr.textContent = msg;
+    gateErr.hidden = false;
+    gateCard.classList.remove('shake');
+    void gateCard.offsetWidth;
+    gateCard.classList.add('shake');
+  }
+  function gateBusy(b) {
+    gateBtn.disabled = b;
+    gateBtn.querySelector('.ag-btn-txt').hidden = b;
+    gateBtn.querySelector('.ag-spin').hidden = !b;
+  }
+
+  function bootstrap() {
+    const demo = new URLSearchParams(location.search).has('demoAuth');
+
+    if (!CFG.url || !CFG.anonKey) {
+      // Supabase hali ulanmagan — ochiq rejim (demo bayrog'i bilan darvozani ko'rish mumkin)
+      if (demo) {
+        gateShow();
+        gateForm.addEventListener('submit', e => {
+          e.preventDefault();
+          gateBusy(true);
+          setTimeout(() => { gateHide(); initApp(null); }, 900);
+        });
+      } else {
+        initApp(null);
+      }
+      return;
+    }
+
+    const client = window.supabase.createClient(CFG.url, CFG.anonKey);
+
+    async function loadAndStart() {
+      const { data: row, error } = await client.from('site_data').select('data').eq('id', 1).single();
+      if (error || !row) { gateShow(); gateError('Maʼlumotni yuklashda xatolik. Qayta urinib koʻring.'); gateBusy(false); return; }
+      let profile = null;
+      try {
+        const { data: u } = await client.auth.getUser();
+        const { data: p } = await client.from('profiles').select('*').eq('user_id', u.user.id).single();
+        profile = p;
+      } catch (e) {}
+      window.SITE_DATA = row.data;
+      gateHide();
+      initApp({ client, profile });
+    }
+
+    client.auth.getSession().then(({ data }) => {
+      if (data.session) loadAndStart();
+      else gateShow();
+    });
+
+    gateForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      gateErr.hidden = true;
+      gateBusy(true);
+      const login = document.getElementById('authLogin').value.trim().toLowerCase();
+      const pass = document.getElementById('authPass').value;
+      const { error } = await client.auth.signInWithPassword({
+        email: login.includes('@') ? login : login + '@navoiy-adliya.uz',
+        password: pass
+      });
+      if (error) {
+        gateBusy(false);
+        gateError('Login yoki parol notoʻgʻri');
+        return;
+      }
+      loadAndStart();
+    });
+  }
+
+  /* ============================================================
+     ASOSIY ILOVA
+     ============================================================ */
+  function initApp(authCtx) {
+
   const DATA = window.SITE_DATA;
   const app = document.getElementById('app');
   const navEl = document.getElementById('districtNav');
   const searchInput = document.getElementById('globalSearch');
+
+  // Server rejimida tahrirlarni umumiy bazaga yozish
+  async function pushData() {
+    if (!authCtx) return;
+    const clean = JSON.parse(JSON.stringify({ districts: DATA.districts },
+      (k, v) => k.startsWith('_') ? undefined : v));
+    const { error } = await authCtx.client.from('site_data')
+      .update({ data: clean, updated_by: authCtx.profile ? authCtx.profile.login : 'admin', updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    if (error) alert('Saqlashda xatolik: ' + error.message);
+  }
 
   /* ---------- Admin tahrirlari: indekslash + saqlangan o'zgarishlarni qo'llash ---------- */
   function getOverrides() {
     try { return JSON.parse(localStorage.getItem('overrides') || '{}'); } catch (e) { return {}; }
   }
   (function initData() {
-    const ov = getOverrides();
+    const ov = authCtx ? {} : getOverrides(); // server rejimida lokal tahrirlar ishlatilmaydi
     DATA.districts.forEach(d => {
       d.orgs.forEach((o, i) => {
         o._di = d.id; o._oi = i;
@@ -941,18 +1061,6 @@
     }
   });
 
-  /* ---------- Splash kirish ekrani ---------- */
-  const splash = document.getElementById('splash');
-  if (sessionStorage.getItem('splashed')) {
-    splash.style.display = 'none';
-  } else {
-    setTimeout(() => {
-      splash.classList.add('done');
-      try { sessionStorage.setItem('splashed', '1'); } catch (e) {}
-      setTimeout(() => splash.remove(), 800);
-    }, 1450);
-  }
-
   /* ---------- Parallax (sichqoncha) ---------- */
   if (fine) {
     const scene = document.querySelector('.bg-scene');
@@ -999,11 +1107,31 @@
   }
   adminBtn.addEventListener('click', () => {
     if (document.body.classList.contains('admin')) { setAdmin(false); return; }
+    if (authCtx) {
+      // Server rejimi: huquq profil orqali aniqlanadi, parol so'ralmaydi
+      if (authCtx.profile && authCtx.profile.is_admin) { setAdmin(true); setDrawer(false); }
+      else alert('Sizda tahrirlash huquqi yoʻq. Administratorga murojaat qiling.');
+      return;
+    }
     const p = prompt('Admin parolini kiriting:');
     if (p === ADMIN_PASS) { setAdmin(true); setDrawer(false); }
     else if (p !== null) alert('Parol notoʻgʻri');
   });
   try { if (sessionStorage.getItem('admin') === '1') setAdmin(true); } catch (e) {}
+
+  // Server rejimida: chiqish tugmasi + foydalanuvchi belgisi
+  if (authCtx) {
+    const out = document.createElement('button');
+    out.className = 'tool-btn full';
+    out.innerHTML = '<span class="ti r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></span>'
+      + ' Chiqish' + (authCtx.profile ? ' (' + esc(authCtx.profile.login) + ')' : '');
+    out.addEventListener('click', async () => {
+      await authCtx.client.auth.signOut();
+      location.reload();
+    });
+    document.getElementById('toolReport').after(out);
+    document.getElementById('adminReset').style.display = 'none';
+  }
 
   const adminBadge = document.createElement('div');
   adminBadge.className = 'admin-badge';
@@ -1049,12 +1177,16 @@
       const tel = document.getElementById('editTel').value.split(',').map(s => s.trim()).filter(Boolean);
       editTarget.obj.fio = fio;
       editTarget.obj.tel = tel;
-      const ov = getOverrides();
-      const key = editTarget.type === 'org'
-        ? `org|${editTarget.di}|${editTarget.i}|${editTarget.role}`
-        : `staff|${editTarget.di}|${editTarget.i}`;
-      ov[key] = { fio, tel };
-      try { localStorage.setItem('overrides', JSON.stringify(ov)); } catch (e2) {}
+      if (authCtx) {
+        pushData(); // umumiy bazaga — barcha foydalanuvchilarda yangilanadi
+      } else {
+        const ov = getOverrides();
+        const key = editTarget.type === 'org'
+          ? `org|${editTarget.di}|${editTarget.i}|${editTarget.role}`
+          : `staff|${editTarget.di}|${editTarget.i}`;
+        ov[key] = { fio, tel };
+        try { localStorage.setItem('overrides', JSON.stringify(ov)); } catch (e2) {}
+      }
       editModal.classList.remove('open');
       route();
     }
@@ -1080,4 +1212,7 @@
   });
 
   route();
+  }
+
+  bootstrap();
 })();

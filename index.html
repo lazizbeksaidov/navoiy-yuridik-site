@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=12">
+<link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
 
@@ -20,6 +20,46 @@
 </div>
 
 <div id="loadbar"></div>
+
+<!-- ============ KIRISH SAHIFASI (auth gate) ============ -->
+<div id="authGate" hidden>
+  <div class="ag-stars" aria-hidden="true">
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  </div>
+  <div class="ag-scene">
+    <div class="ag-emblem" aria-hidden="true">
+      <span class="ag-ring r1"></span>
+      <span class="ag-ring r2"></span>
+      <span class="ag-glow"></span>
+      <img src="img/logo.png" alt="">
+    </div>
+    <div class="ag-card">
+      <h1>Navoiy viloyati</h1>
+      <p class="ag-sub">Yuridik xizmat koʻrsatish markazlari · maʼlumotnoma</p>
+      <form id="authForm" autocomplete="off">
+        <label class="ag-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input id="authLogin" type="text" placeholder="Login" required autocapitalize="off" spellcheck="false">
+        </label>
+        <label class="ag-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="authPass" type="password" placeholder="Parol" required>
+          <button type="button" class="ag-eye" id="authEye" aria-label="Parolni ko'rsatish">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </label>
+        <div class="ag-err" id="authErr" hidden></div>
+        <button type="submit" class="ag-btn" id="authBtn">
+          <span class="ag-btn-txt">Tizimga kirish</span>
+          <span class="ag-spin" hidden></span>
+        </button>
+      </form>
+      <p class="ag-note">Login va parol yuridik xizmat markazi xodimlariga beriladi</p>
+    </div>
+  </div>
+  <p class="ag-foot">Oʻzbekiston Respublikasi Adliya vazirligi · Navoiy viloyati</p>
+</div>
 
 <div class="bg-scene" aria-hidden="true">
   <div class="blob blob-1"></div>
@@ -144,9 +184,11 @@
   </div>
 </footer>
 
+<script src="js/supabase.min.js"></script>
+<script src="js/auth-config.js?v=13"></script>
 <script src="js/qrcode.min.js"></script>
 <script src="js/motion.min.js"></script>
-<script src="js/data.js?v=12"></script>
-<script src="js/app.js?v=12"></script>
+<script src="js/data.js?v=13"></script>
+<script src="js/app.js?v=13"></script>
 </body>
 </html>
