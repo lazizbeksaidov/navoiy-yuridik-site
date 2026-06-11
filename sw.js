@@ -1,7 +1,7 @@
 // Minimal service worker — ilova qobig'ini keshlaydi (asosiy fayllar)
-const C = 'navoiy-v19';
-const ASSETS = ['./', './index.html', './css/style.css?v=19', './js/app.js?v=19',
-  './js/auth-config.js?v=19', './js/supabase.min.js', './js/qrcode.min.js',
+const C = 'navoiy-v20';
+const ASSETS = ['./', './index.html', './css/style.css?v=20', './js/app.js?v=20',
+  './js/auth-config.js?v=20', './js/supabase.min.js', './js/qrcode.min.js',
   './js/motion.min.js', './img/logo.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(ASSETS.map(u => new Request(u, {cache:'reload'})).filter(Boolean)).catch(()=>{})));
