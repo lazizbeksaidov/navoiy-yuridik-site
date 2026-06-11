@@ -647,6 +647,8 @@
         <div class="sub">Navoiy viloyati boʻyicha umumiy koʻrsatkichlar</div>
       </section>
 
+      ${(authCtx && authCtx.profile && authCtx.profile.is_admin) ? '<div id="aiStatsPanel" class="rv"></div>' : ''}
+
       <div class="hero-stats" style="margin-top:26px">
         <div class="stat tilt rv"><b data-counter="${DATA.districts.length}">0</b><span>tuman va shahar</span></div>
         <div class="stat tilt rv"><b data-counter="${totalStaff}">0</b><span>markaz xodimi</span></div>
@@ -713,6 +715,56 @@
         </div>
       </div>`;
     enhance();
+    loadAiStats();
+  }
+
+  /* ---------- Admin: AI faollik statistikasi ---------- */
+  async function loadAiStats() {
+    const panel = document.getElementById('aiStatsPanel');
+    if (!panel || !authCtx) return;
+    panel.innerHTML = '<div class="stat-panel" style="text-align:center;color:var(--muted);padding:26px">AI statistikasi yuklanmoqda...</div>';
+    try {
+      const { data: { session } } = await authCtx.client.auth.getSession();
+      const res = await fetch(CFG.url + '/functions/v1/admin', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'aiStats' })
+      });
+      const s = await res.json();
+      if (s.error) { panel.innerHTML = ''; return; }
+      const maxDay = Math.max(1, ...s.days.map(d => d.v));
+      const dayLabel = k => { const p = k.split('-'); return p[2] + '.' + p[1]; };
+      panel.innerHTML = `
+        <h2 class="section-title"><span class="bar"></span>AI yordamchi faolligi <span class="count">admin</span></h2>
+        <div class="hero-stats" style="margin-bottom:8px">
+          <div class="stat tilt"><b>${s.today}</b><span>bugun savol</span></div>
+          <div class="stat tilt"><b>${s.total}</b><span>7 kunda</span></div>
+          <div class="stat tilt"><b>${s.topUsers.length}</b><span>faol xodim</span></div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-panel">
+            <h3><span class="dot9"></span>So‘nggi 7 kun</h3>
+            <div class="stack-rows">
+              ${s.days.length ? s.days.map(d => `<div class="stack-row" style="cursor:default">
+                <span class="sname">${dayLabel(d.k)}</span>
+                <span class="sbar"><i class="sm" style="width:${Math.round(d.v/maxDay*100)}%"></i></span>
+                <span class="stotal">${d.v}</span></div>`).join('') : '<div style="color:var(--muted);font-size:13px">Hozircha maʼlumot yoʻq</div>'}
+            </div>
+          </div>
+          <div class="stat-panel">
+            <h3><span class="dot9"></span>Eng koʻp soʻralgan</h3>
+            <div class="ai-top">
+              ${s.topQuestions.length ? s.topQuestions.map(q => `<div class="ai-top-row"><span>${esc(q.k)}</span><b>${q.v}</b></div>`).join('') : '<div style="color:var(--muted);font-size:13px">—</div>'}
+            </div>
+          </div>
+          <div class="stat-panel" style="grid-column:1/-1">
+            <h3><span class="dot9"></span>Soʻnggi soʻrovlar</h3>
+            <div class="ai-top">
+              ${s.recent.length ? s.recent.map(r => `<div class="ai-top-row"><span>${esc(r.q)}</span><b style="color:var(--muted);font-weight:600">${esc(r.login||'?')}</b></div>`).join('') : '<div style="color:var(--muted);font-size:13px">—</div>'}
+            </div>
+          </div>
+        </div>`;
+    } catch (e) { panel.innerHTML = ''; }
   }
 
   /* ---------- nav / routing ---------- */
@@ -1144,6 +1196,15 @@
   editModal.innerHTML = `<div class="qr-box">
     <h5 style="margin-bottom:12px">Maʼlumotni tahrirlash</h5>
     <div class="edit-form">
+      <div class="edit-photo" id="editPhotoRow" hidden>
+        <div class="ep-prev" id="epPrev"></div>
+        <div class="ep-side">
+          <button type="button" class="ep-btn" id="epUpload">Rasm yuklash</button>
+          <button type="button" class="ep-del" id="epDel">Rasmni oʻchirish</button>
+          <span class="ep-hint" id="epHint">JPG/PNG · ≤5MB</span>
+        </div>
+        <input type="file" id="epFile" accept="image/*" hidden>
+      </div>
       <label>F.I.O.<input id="editFio" autocomplete="off"></label>
       <label>Telefon(lar) — vergul bilan<input id="editTel" autocomplete="off" placeholder="+998 90 123 45 67"></label>
       <div class="edit-actions">
@@ -1167,8 +1228,64 @@
     editTarget = { type: eb.dataset.edit, di: eb.dataset.d, i: +eb.dataset.i, role: eb.dataset.role, obj };
     document.getElementById('editFio').value = obj.fio || '';
     document.getElementById('editTel').value = (obj.tel || []).join(', ');
+    // Rasm — faqat markaz xodimi va server (admin) rejimida
+    const photoRow = document.getElementById('editPhotoRow');
+    if (eb.dataset.edit === 'staff' && authCtx) {
+      photoRow.hidden = false;
+      renderEpPrev(obj.photo);
+    } else {
+      photoRow.hidden = true;
+    }
     editModal.classList.add('open');
   }, true);
+
+  /* ---------- Rasm yuklash (Supabase Storage) ---------- */
+  function renderEpPrev(url) {
+    const p = document.getElementById('epPrev');
+    p.innerHTML = url
+      ? `<img src="${esc(url)}" alt="">`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>`;
+  }
+  if (authCtx) {
+    document.getElementById('epUpload').addEventListener('click', () => document.getElementById('epFile').click());
+    document.getElementById('epDel').addEventListener('click', () => {
+      if (editTarget) { editTarget.obj.photo = ''; renderEpPrev(''); }
+    });
+    document.getElementById('epFile').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file || !editTarget) return;
+      const hint = document.getElementById('epHint');
+      if (file.size > 5 * 1024 * 1024) { hint.textContent = 'Fayl 5MBdan katta!'; return; }
+      hint.textContent = 'Tayyorlanmoqda...';
+      try {
+        const blob = await resizeImage(file, 500);
+        hint.textContent = 'Yuklanmoqda...';
+        const path = `${editTarget.di}-${editTarget.i}-${Date.now()}.jpg`;
+        const { error } = await authCtx.client.storage.from('staff').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+        if (error) { hint.textContent = 'Xato: ' + error.message; return; }
+        const { data } = authCtx.client.storage.from('staff').getPublicUrl(path);
+        editTarget.obj.photo = data.publicUrl;
+        renderEpPrev(data.publicUrl);
+        hint.textContent = 'Yuklandi ✓ (Saqlashni bosing)';
+      } catch (err) { hint.textContent = 'Xato: ' + err.message; }
+      e.target.value = '';
+    });
+  }
+  // Rasmni canvas orqali kichraytirib JPEG qilish (tezkor yuklash)
+  function resizeImage(file, max) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width: w, height: h } = img;
+        if (w > max || h > max) { const s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('canvas')), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => reject(new Error('rasm oʻqilmadi'));
+      img.src = URL.createObjectURL(file);
+    });
+  }
 
   editModal.addEventListener('click', e => {
     if (e.target === editModal || e.target.id === 'editCancel') editModal.classList.remove('open');
@@ -1365,6 +1482,35 @@
         setTimeout(() => { b.textContent = o; }, 1200);
       }
     });
+
+    // Ovozli savol — Web Speech API (brauzer ichida, bepul)
+    const mic = document.getElementById('aiMic');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      mic.style.display = 'none';
+    } else {
+      let rec = null, listening = false;
+      mic.addEventListener('click', () => {
+        if (listening) { rec && rec.stop(); return; }
+        rec = new SR();
+        rec.lang = isCyr() ? 'uz-UZ' : 'uz-UZ';
+        rec.interimResults = true;
+        rec.continuous = false;
+        rec.onstart = () => { listening = true; mic.classList.add('rec'); input.placeholder = 'Tinglanmoqda...'; };
+        rec.onresult = e => {
+          let t = '';
+          for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+          input.value = t;
+        };
+        rec.onerror = () => { input.placeholder = 'Ovoz tanilmadi, qayta urining'; };
+        rec.onend = () => {
+          listening = false; mic.classList.remove('rec');
+          input.placeholder = 'Savolingizni yozing...';
+          if (input.value.trim()) form.requestSubmit();
+        };
+        try { rec.start(); } catch (e) {}
+      });
+    }
 
     form.addEventListener('submit', async e => {
       e.preventDefault();

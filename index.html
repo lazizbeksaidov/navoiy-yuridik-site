@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="img/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Navoiy Adliya">
-<link rel="stylesheet" href="css/style.css?v=20">
+<link rel="stylesheet" href="css/style.css?v=21">
 </head>
 <body>
 <script>if(self!==top){try{top.location=self.location}catch(e){document.documentElement.style.display='none'}}</script>
@@ -218,6 +218,7 @@
     </div>
   </div>
   <form class="ai-input" id="aiForm">
+    <button type="button" id="aiMic" aria-label="Ovozli savol" title="Ovoz bilan soʻrash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></button>
     <input id="aiText" type="text" placeholder="Savolingizni yozing..." autocomplete="off" maxlength="500">
     <button type="submit" aria-label="Yuborish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
   </form>
@@ -272,10 +273,10 @@
 </footer>
 
 <script src="js/supabase.min.js"></script>
-<script src="js/auth-config.js?v=20"></script>
+<script src="js/auth-config.js?v=21"></script>
 <script src="js/qrcode.min.js"></script>
 <script src="js/motion.min.js"></script>
-<script src="js/app.js?v=20"></script>
+<script src="js/app.js?v=21"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
