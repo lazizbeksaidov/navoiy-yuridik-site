@@ -631,6 +631,36 @@
   }
 
   /* ---------- Statistika sahifasi ---------- */
+  // Animatsiyali SVG doira diagramma (segmentlar chizilib chiqadi)
+  function donutSVG(segs, total, label) {
+    const R = 80, C = 2 * Math.PI * R, sum = segs.reduce((a, s) => a + s.v, 0) || 1;
+    let offset = 0;
+    const defs = segs.map((s, i) => `<linearGradient id="dg${i}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${s.c2}"/><stop offset="1" stop-color="${s.c}"/></linearGradient>`).join('');
+    const arcs = segs.map((s, i) => {
+      const len = s.v / sum * C;
+      const dash = `${len} ${C - len}`;
+      const rot = offset / sum * 360 - 90;
+      offset += s.v;
+      return `<circle class="donut-arc" cx="100" cy="100" r="${R}" fill="none"
+        stroke="url(#dg${i})" stroke-width="26" stroke-linecap="round"
+        stroke-dasharray="0 ${C}" data-dash="${dash}"
+        transform="rotate(${rot} 100 100)" style="--d:${i * 0.18}s"/>`;
+    }).join('');
+    return `<div class="donut3d">
+      <svg viewBox="0 0 200 200" class="donut-svg"><defs>${defs}</defs>
+        <circle cx="100" cy="100" r="${R}" fill="none" stroke="rgba(140,160,200,.14)" stroke-width="26"/>
+        ${arcs}
+      </svg>
+      <div class="donut-center"><b data-counter="${total}">0</b><span>${label}</span></div>
+    </div>`;
+  }
+  function animateDonuts() {
+    app.querySelectorAll('.donut-arc').forEach(a => {
+      requestAnimationFrame(() => requestAnimationFrame(() => { a.style.strokeDasharray = a.dataset.dash; }));
+    });
+  }
+
   function renderStats() {
     const totals = { maktab: 0, dmtt: 0, other: 0 };
     DATA.districts.forEach(d => d.orgs.forEach(o => totals[catOfOrg(o)]++));
@@ -657,20 +687,19 @@
         <div class="stat tilt rv"><b data-counter="${totals.other}">0</b><span>boshqa tashkilot</span></div>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-panel rv">
+      <div class="stats-bento">
+        <div class="stat-panel rv donut-panel">
           <h3><span class="dot9"></span>Tashkilotlar turlari boʻyicha</h3>
           <div class="donut-wrap">
-            <div class="donut" style="background: conic-gradient(
-              #2f54a8 0 ${pM}%,
-              #c9a227 ${pM}% ${pM + pD}%,
-              #157347 ${pM + pD}% 100%)">
-              <div class="donut-center"><b>${totalOrgs}</b><span>tashkilot</span></div>
-            </div>
+            ${donutSVG([
+              { v: totals.maktab, c: '#2f54a8', c2: '#5c7ec9' },
+              { v: totals.dmtt, c: '#c9a227', c2: '#e3c668' },
+              { v: totals.other, c: '#157347', c2: '#3da57a' }
+            ], totalOrgs, 'tashkilot')}
             <div class="legend">
-              <div class="li"><span class="sw c-m"></span>Maktablar <b>${totals.maktab}</b></div>
-              <div class="li"><span class="sw c-d"></span>DMTT <b>${totals.dmtt}</b></div>
-              <div class="li"><span class="sw c-o"></span>Boshqa tashkilotlar <b>${totals.other}</b></div>
+              <div class="li"><span class="sw c-m"></span>Maktablar <b>${totals.maktab}</b><i>${Math.round(pM)}%</i></div>
+              <div class="li"><span class="sw c-d"></span>DMTT <b>${totals.dmtt}</b><i>${Math.round(pD)}%</i></div>
+              <div class="li"><span class="sw c-o"></span>Boshqa <b>${totals.other}</b><i>${Math.round(100 - pM - pD)}%</i></div>
             </div>
           </div>
         </div>
@@ -678,9 +707,9 @@
         <div class="stat-panel rv">
           <h3><span class="dot9"></span>Markaz xodimlari — hududlar boʻyicha</h3>
           <div class="stack-rows">
-            ${[...DATA.districts].sort((a, b) => b.markaz.length - a.markaz.length).map(d => {
+            ${[...DATA.districts].sort((a, b) => b.markaz.length - a.markaz.length).map((d, i) => {
               const maxS = Math.max(...DATA.districts.map(x => x.markaz.length));
-              return `<a class="stack-row" href="#/hudud/${d.id}">
+              return `<a class="stack-row" href="#/hudud/${d.id}" style="--si:${i}">
                 <span class="sname">${esc(d.name)}</span>
                 <span class="sbar"><i class="sm" data-w="${Math.round(d.markaz.length / maxS * 100)}"></i></span>
                 <span class="stotal">${d.markaz.length}</span>
@@ -689,14 +718,14 @@
           </div>
         </div>
 
-        <div class="stat-panel rv" style="grid-column: 1 / -1">
+        <div class="stat-panel rv wide">
           <h3><span class="dot9"></span>Hududlar kesimida — maktab / DMTT / boshqa tashkilotlar</h3>
-          <div class="stack-rows">
-            ${[...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).map(d => {
+          <div class="stack-rows two-col">
+            ${[...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).map((d, i) => {
               const c = { maktab: 0, dmtt: 0, other: 0 };
               d.orgs.forEach(o => c[catOfOrg(o)]++);
               const w = n => Math.round(n / maxOrg * 100);
-              return `<a class="stack-row" href="#/hudud/${d.id}">
+              return `<a class="stack-row" href="#/hudud/${d.id}" style="--si:${i}">
                 <span class="sname">${esc(d.name)}</span>
                 <span class="sbar">
                   <i class="sm" data-w="${w(c.maktab)}" title="Maktablar: ${c.maktab}"></i>
@@ -715,6 +744,7 @@
         </div>
       </div>`;
     enhance();
+    animateDonuts();
     loadAiStats();
   }
 
