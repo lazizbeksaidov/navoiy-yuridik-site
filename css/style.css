@@ -938,11 +938,21 @@ body.dark .dl-group b { color: #c7d6f5; }
   width: 36px; height: 36px; flex: 0 0 36px;
   border-radius: 11px;
   display: flex; align-items: center; justify-content: center;
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(20, 42, 82, .22), inset 0 1px 0 rgba(255,255,255,.3);
+  border: 1px solid rgba(255,255,255,.9);
+  box-shadow: var(--shadow-sm);
   transition: transform .25s cubic-bezier(.34,1.56,.64,1);
 }
 .dli svg { width: 18px; height: 18px; }
+.dli.t { background: linear-gradient(145deg, #eef2fb, #dde6f7); color: var(--navy-light); }
+.dli.c { background: linear-gradient(145deg, #faf3dd, #f0e2b0); color: #a8821a; }
+.drawer-links a.active .dli {
+  background: rgba(255, 255, 255, .16);
+  border-color: rgba(255,255,255,.3);
+  color: #fff;
+}
+body.dark .dli { border-color: rgba(120,145,195,.3); }
+body.dark .dli.t { background: linear-gradient(145deg, #2b3f6e, #1d2c52); color: #9db9f2; }
+body.dark .dli.c { background: linear-gradient(145deg, #4d3f17, #33290e); color: #e3c668; }
 .dl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .drawer-links a:hover {
   background: rgba(255,255,255,.85); border-color: #fff;
@@ -974,10 +984,19 @@ body.dark .drawer-links a:hover { background: rgba(42, 60, 102, .6); border-colo
   width: 32px; height: 32px; flex: 0 0 32px;
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(20, 42, 82, .2), inset 0 1px 0 rgba(255,255,255,.3);
+  background: linear-gradient(145deg, #eef2fb, #dde6f7);
+  color: var(--navy-light);
+  border: 1px solid rgba(255,255,255,.9);
+  box-shadow: var(--shadow-sm);
   transition: transform .25s cubic-bezier(.34,1.56,.64,1);
 }
+.tool-btn .ti.g { background: linear-gradient(145deg, #e2f3ea, #cdeada); color: var(--green); }
+.tool-btn .ti.a { background: linear-gradient(145deg, #fbf0dd, #f4e2bd); color: #b07a1a; }
+.tool-btn .ti.r { background: linear-gradient(145deg, #fbe3e1, #f4cfcc); color: #b3261e; }
+body.dark .tool-btn .ti { background: linear-gradient(145deg, #2b3f6e, #1d2c52); color: #9db9f2; border-color: rgba(120,145,195,.3); }
+body.dark .tool-btn .ti.g { background: linear-gradient(145deg, #1c4733, #122e21); color: #6fd0a3; }
+body.dark .tool-btn .ti.a { background: linear-gradient(145deg, #4d3f17, #33290e); color: #e3c668; }
+body.dark .tool-btn .ti.r { background: linear-gradient(145deg, #4d211e, #331512); color: #e89a94; }
 .tool-btn svg { width: 15px; height: 15px; }
 .tool-btn:hover { background: #fff; transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .tool-btn:hover .ti { transform: scale(1.1) rotate(-4deg); }

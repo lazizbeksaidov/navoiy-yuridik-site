@@ -725,19 +725,15 @@
     <div class="ds"><b>${tStaff}</b><span>xodim</span></div>
     <div class="ds"><b>${tOrgs}</b><span>tashkilot</span></div>`;
 
-  // hudud havolalari — rangli ikonka-plitkalar bilan (shahar/tuman guruhlangan)
-  const TILE_COLORS = ['#4f74d9', '#8e5fd4', '#d45f93', '#d9824a', '#2fa97f', '#3ba3d9', '#7a6bd9', '#d95b5b'];
-  const CITY_TILES = ['#c9a227', '#b88a1c', '#d4af37'];
+  // hudud havolalari — vazmin, professional plitkalar (shahar — oltin, tuman — ko'k)
   document.getElementById('drawerLinks').innerHTML = [
     { label: 'Shaharlar', items: DATA.districts.filter(isCity), city: true },
     { label: 'Tumanlar', items: DATA.districts.filter(d => !isCity(d)), city: false }
   ].map(g => `
     <div class="dl-group">${g.label}<i></i><b>${g.items.length}</b></div>
-    ${g.items.map((d, i) =>
+    ${g.items.map(d =>
       `<a href="#/hudud/${d.id}" data-did="${d.id}">
-         <span class="dli" style="background:linear-gradient(145deg, ${g.city ? CITY_TILES[i % 3] : TILE_COLORS[i % 8]}, ${g.city ? '#8a6a12' : '#1f3b73'}cc)">
-           ${g.city ? CITY_ICON : ICONS.pin}
-         </span>
+         <span class="dli ${g.city ? 'c' : 't'}">${g.city ? CITY_ICON : ICONS.pin}</span>
          <span class="dl-name">${esc(d.name)}</span>
          <span class="cnt">${d.orgs.length}</span>
        </a>`).join('')}`).join('');
