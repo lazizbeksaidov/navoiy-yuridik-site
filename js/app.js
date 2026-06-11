@@ -725,18 +725,30 @@
     <div class="ds"><b>${tStaff}</b><span>xodim</span></div>
     <div class="ds"><b>${tOrgs}</b><span>tashkilot</span></div>`;
 
-  // hudud havolalari — shahar/tuman guruhlari bilan
+  // hudud havolalari — rangli ikonka-plitkalar bilan (shahar/tuman guruhlangan)
+  const TILE_COLORS = ['#4f74d9', '#8e5fd4', '#d45f93', '#d9824a', '#2fa97f', '#3ba3d9', '#7a6bd9', '#d95b5b'];
+  const CITY_TILES = ['#c9a227', '#b88a1c', '#d4af37'];
   document.getElementById('drawerLinks').innerHTML = [
-    { label: 'Shaharlar', items: DATA.districts.filter(isCity) },
-    { label: 'Tumanlar', items: DATA.districts.filter(d => !isCity(d)) }
+    { label: 'Shaharlar', items: DATA.districts.filter(isCity), city: true },
+    { label: 'Tumanlar', items: DATA.districts.filter(d => !isCity(d)), city: false }
   ].map(g => `
     <div class="dl-group">${g.label}<i></i><b>${g.items.length}</b></div>
-    ${g.items.map(d =>
-      `<a href="#/hudud/${d.id}">
-         <span class="mini${isCity(d) ? ' city' : ''}">${isCity(d) ? CITY_ICON : esc(d.name[0])}</span>
-         ${esc(d.name)}
+    ${g.items.map((d, i) =>
+      `<a href="#/hudud/${d.id}" data-did="${d.id}">
+         <span class="dli" style="background:linear-gradient(145deg, ${g.city ? CITY_TILES[i % 3] : TILE_COLORS[i % 8]}, ${g.city ? '#8a6a12' : '#1f3b73'}cc)">
+           ${g.city ? CITY_ICON : ICONS.pin}
+         </span>
+         <span class="dl-name">${esc(d.name)}</span>
          <span class="cnt">${d.orgs.length}</span>
        </a>`).join('')}`).join('');
+
+  function updateDrawerActive() {
+    const m = (location.hash || '').match(/^#\/hudud\/([a-z]+)/);
+    document.querySelectorAll('#drawerLinks a').forEach(a =>
+      a.classList.toggle('active', !!m && a.dataset.did === m[1]));
+  }
+  window.addEventListener('hashchange', updateDrawerActive);
+  updateDrawerActive();
   document.getElementById('drawerLinks').addEventListener('click', () => setDrawer(false));
 
   // qulayliklar
