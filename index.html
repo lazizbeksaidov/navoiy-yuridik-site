@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=17">
 </head>
 <body>
 
@@ -186,6 +186,31 @@
 
 <main class="container" id="app"></main>
 
+
+<!-- ============ AI yordamchi ============ -->
+<button class="ai-fab" id="aiFab" aria-label="AI yordamchi" title="AI yordamchi">
+  <svg class="ai-fab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+  <span class="ai-fab-close">✕</span>
+</button>
+<div class="ai-panel" id="aiPanel" hidden>
+  <div class="ai-head">
+    <span class="ai-ava"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg></span>
+    <div><b>AI yordamchi</b><span>Maʼlumotnoma boʻyicha savol bering</span></div>
+  </div>
+  <div class="ai-body" id="aiBody">
+    <div class="ai-msg bot">Assalomu alaykum! Men Navoiy viloyati yuridik xizmat markazlari maʼlumotnomasi yordamchisiman. Tashkilot, xodim yoki telefon raqami haqida soʻrang.</div>
+    <div class="ai-chips" id="aiChips">
+      <button>Qiziltepa markaz boshligʻi kim?</button>
+      <button>Navoiy shahar 5-maktab raqami</button>
+      <button>Xatirchida nechta DMTT bor?</button>
+    </div>
+  </div>
+  <form class="ai-input" id="aiForm">
+    <input id="aiText" type="text" placeholder="Savolingizni yozing..." autocomplete="off" maxlength="500">
+    <button type="submit" aria-label="Yuborish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
+  </form>
+</div>
+
 <button class="to-top" id="toTop" aria-label="Yuqoriga"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button>
 
 <footer class="footer">
@@ -207,9 +232,9 @@
 </footer>
 
 <script src="js/supabase.min.js"></script>
-<script src="js/auth-config.js?v=16"></script>
+<script src="js/auth-config.js?v=17"></script>
 <script src="js/qrcode.min.js"></script>
 <script src="js/motion.min.js"></script>
-<script src="js/app.js?v=16"></script>
+<script src="js/app.js?v=17"></script>
 </body>
 </html>

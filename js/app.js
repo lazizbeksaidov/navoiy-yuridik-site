@@ -1211,6 +1211,79 @@
     }
   });
 
+  /* ---------- AI yordamchi chat ---------- */
+  (function initAiChat() {
+    const fab = document.getElementById('aiFab');
+    const panel = document.getElementById('aiPanel');
+    const body = document.getElementById('aiBody');
+    const form = document.getElementById('aiForm');
+    const input = document.getElementById('aiText');
+    if (!fab) return;
+
+    // AI faqat server (login) rejimida ishlaydi
+    if (!authCtx) { fab.style.display = 'none'; panel.style.display = 'none'; return; }
+
+    const hist = [];
+    fab.addEventListener('click', () => {
+      const open = panel.hidden;
+      panel.hidden = !open;
+      document.body.classList.toggle('ai-open', open);
+      if (open) setTimeout(() => input.focus(), 100);
+    });
+
+    document.getElementById('aiChips').addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (b) { input.value = b.textContent; form.requestSubmit(); }
+    });
+
+    function addMsg(text, cls) {
+      const chips = document.getElementById('aiChips');
+      if (chips) chips.remove();
+      const d = document.createElement('div');
+      d.className = 'ai-msg ' + cls;
+      d.textContent = text;
+      body.appendChild(d);
+      body.scrollTop = body.scrollHeight;
+      return d;
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (!q) return;
+      input.value = '';
+      addMsg(q, 'user');
+      hist.push({ role: 'user', text: q });
+
+      const typing = document.createElement('div');
+      typing.className = 'ai-msg bot typing';
+      typing.innerHTML = '<i></i><i></i><i></i>';
+      body.appendChild(typing);
+      body.scrollTop = body.scrollHeight;
+
+      try {
+        const { data: { session } } = await authCtx.client.auth.getSession();
+        const res = await fetch(CFG.url + '/functions/v1/chat', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + session.access_token,
+            'apikey': CFG.anonKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ question: q, history: hist.slice(0, -1) })
+        });
+        const data = await res.json();
+        typing.remove();
+        const ans = data.answer || data.error || 'Javob olinmadi.';
+        addMsg(ans, 'bot');
+        if (data.answer) hist.push({ role: 'model', text: data.answer });
+      } catch (err) {
+        typing.remove();
+        addMsg('Ulanishda xatolik. Internetni tekshiring.', 'bot');
+      }
+    });
+  })();
+
   route();
   }
 
