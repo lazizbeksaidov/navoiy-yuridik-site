@@ -736,7 +736,7 @@
       el.classList.add('done');
       animateCounter(el);
     });
-    app.querySelectorAll('.cbar i[data-w], .sbar i[data-w]').forEach((el, i) => {
+    app.querySelectorAll('.cbar i[data-w], .sbar i[data-w], .st-prop-bar i[data-w], .st-rank-bar i[data-w]').forEach((el, i) => {
       if (M && M.animate) {
         // transform asosida (performant): width darhol, scaleX spring bilan
         el.style.width = el.dataset.w + '%';
@@ -846,9 +846,50 @@
     </div>`;
   }
   function animateDonuts() {
-    app.querySelectorAll('.donut-arc').forEach(a => {
+    app.querySelectorAll('.donut-arc, .g-arc[data-dash]').forEach(a => {
       requestAnimationFrame(() => requestAnimationFrame(() => { a.style.strokeDasharray = a.dataset.dash; }));
     });
+  }
+
+  // Radial gauge — kutubxonasiz SVG (donut uslubida). value/max ulush bo'yicha to'ladi.
+  function radialGauge(value, max, big, sub, accent) {
+    const R = 70, C = 2 * Math.PI * R;
+    const frac = Math.max(0, Math.min(1, value / (max || 1)));
+    const dash = (frac * C).toFixed(1) + ' ' + C.toFixed(1);
+    const grad = accent === 'gold' ? ['#e3c668', '#b89221'] : ['#6b8bd4', '#2f54a8'];
+    const gid = 'gg-' + accent;
+    return `<div class="st-gauge">
+      <svg viewBox="0 0 160 160">
+        <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${grad[0]}"/><stop offset="1" stop-color="${grad[1]}"/></linearGradient></defs>
+        <circle class="g-track" cx="80" cy="80" r="${R}"/>
+        <circle class="g-arc" cx="80" cy="80" r="${R}" stroke="url(#${gid})"
+          data-dash="${dash}" stroke-dasharray="0 ${C.toFixed(1)}"/>
+      </svg>
+      <div class="st-gauge-center"><b data-counter="${value}">0</b><i>${esc(sub)}</i><small>${esc(big)} ulush</small></div>
+    </div>`;
+  }
+
+  // Top hududlar leaderboard — SVG medal nishoni bilan (raqam emoji o'rnida SVG)
+  function rankList(list, maxOrg) {
+    const palette = ['#c9a227', '#9db0c8', '#cd7f4e'];
+    return list.map((d, i) => {
+      const t = d.orgs.length;
+      const col = palette[i] || '#3f5fae';
+      const col2 = i === 0 ? '#e9d28a' : i === 1 ? '#cdd6e4' : i === 2 ? '#e0a878' : '#6b8bd4';
+      const w = Math.round(t / maxOrg * 100);
+      const badge = `<svg viewBox="0 0 24 24" fill="none">
+        <defs><linearGradient id="rb${i}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${col2}"/><stop offset="1" stop-color="${col}"/></linearGradient></defs>
+        <circle cx="12" cy="9.5" r="6.5" fill="url(#rb${i})" stroke="rgba(255,255,255,.6)" stroke-width="1"/>
+        <path d="M8.5 14.5 7 22l5-2.6L17 22l-1.5-7.5" fill="url(#rb${i})" stroke="rgba(255,255,255,.5)" stroke-width=".8" stroke-linejoin="round"/></svg>`;
+      return `<a class="st-rank" href="#/hudud/${d.id}">
+        <span class="st-rank-badge">${badge}<span>${i + 1}</span></span>
+        <span class="st-rank-name">${esc(d.name)}<small>${isCity(d) ? 'shahar' : 'tuman'}</small></span>
+        <span class="st-rank-bar"><i data-w="${w}"></i></span>
+        <span class="st-rank-val"><b data-counter="${t}">0</b><small>tashkilot</small></span>
+      </a>`;
+    }).join('');
   }
 
   function renderStats() {
@@ -859,32 +900,72 @@
     const pM = totals.maktab / totalOrgs * 100;
     const pD = totals.dmtt / totalOrgs * 100;
     const maxOrg = Math.max(...DATA.districts.map(d => d.orgs.length));
+    const cityCount = DATA.districts.filter(isCity).length;
+    const distCount = DATA.districts.length - cityCount;
+    const avgOrg = Math.round(totalOrgs / DATA.districts.length);
+    const aggOf = pred => {
+      const ds = DATA.districts.filter(pred);
+      const o = ds.reduce((a, d) => a + d.orgs.length, 0);
+      const s = ds.reduce((a, d) => a + d.markaz.length, 0);
+      return { count: ds.length, orgs: o, staff: s, avg: ds.length ? Math.round(o / ds.length) : 0, share: Math.round(o / totalOrgs * 100) };
+    };
+    const cityAgg = aggOf(isCity);
+    const distAgg = aggOf(d => !isCity(d));
+    const topDistricts = [...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).slice(0, 5);
 
     app.innerHTML = `
       <section class="dist-head rv">
         <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Statistika</div>
         <h1>Statistika</h1>
-        <div class="sub">Navoiy viloyati boʻyicha umumiy koʻrsatkichlar</div>
+        <div class="sub">Navoiy viloyati yuridik xizmat markazlari boʻyicha umumiy hisobot</div>
       </section>
 
       ${(authCtx && authCtx.profile && authCtx.profile.is_admin) ? '<div id="aiStatsPanel" class="rv"></div>' : ''}
 
-      <div class="hero-stats" style="margin-top:26px">
-        <div class="stat tilt rv"><b data-counter="${DATA.districts.length}">0</b><span>tuman va shahar</span></div>
-        <div class="stat tilt rv"><b data-counter="${totalStaff}">0</b><span>markaz xodimi</span></div>
-        <div class="stat tilt rv"><b data-counter="${totals.maktab}">0</b><span>maktab</span></div>
-        <div class="stat tilt rv"><b data-counter="${totals.dmtt}">0</b><span>DMTT</span></div>
-        <div class="stat tilt rv"><b data-counter="${totals.other}">0</b><span>boshqa tashkilot</span></div>
+      <section class="st-lead rv">
+        <div class="st-lead-item">
+          <span class="st-lead-kicker">${CHART_ICON}Jami tashkilotlar</span>
+          <b class="st-lead-num" data-counter="${totalOrgs}">0</b>
+          <span class="st-lead-ctx">${DATA.districts.length} hudud boʻylab roʻyxatga olingan</span>
+        </div>
+        <span class="st-lead-div" aria-hidden="true"></span>
+        <div class="st-lead-item">
+          <span class="st-lead-kicker">${ICONS.team}Markaz xodimlari</span>
+          <b class="st-lead-num gold" data-counter="${totalStaff}">0</b>
+          <span class="st-lead-ctx">rahbar, kadrlar va buxgalteriya boʻyicha</span>
+        </div>
+        <span class="st-lead-div" aria-hidden="true"></span>
+        <div class="st-lead-item st-lead-mini">
+          <div class="st-mini-row"><b data-counter="${cityCount}">0</b><span>shahar</span></div>
+          <div class="st-mini-row"><b data-counter="${distCount}">0</b><span>tuman</span></div>
+          <div class="st-mini-row"><b data-counter="${avgOrg}">0</b><span>oʻrtacha / hudud</span></div>
+        </div>
+      </section>
+
+      <div class="st-kpi-grid">
+        ${[
+          { ic: ICONS.pin,   n: DATA.districts.length, l: 'tuman va shahar',  cls: 'k-navy' },
+          { ic: ICONS.team,  n: totalStaff,            l: 'markaz xodimi',    cls: 'k-navy' },
+          { ic: ICONS.award, n: totals.maktab,         l: 'maktab',           cls: 'k-blue' },
+          { ic: CITY_ICON,   n: totals.dmtt,           l: 'DMTT',             cls: 'k-gold' },
+          { ic: ICONS.pin,   n: totals.other,          l: 'boshqa tashkilot', cls: 'k-green' }
+        ].map((k, i) => `
+          <div class="st-kpi tilt rv" style="--si:${i}">
+            <span class="st-kpi-ic ${k.cls}">${k.ic}</span>
+            <b data-counter="${k.n}">0</b>
+            <span class="st-kpi-l">${k.l}</span>
+          </div>`).join('')}
       </div>
 
-      <div class="stats-bento">
+      <h2 class="section-title rv"><span class="bar"></span>Viloyat tarkibi <span class="count">${totalOrgs} tashkilot</span></h2>
+      <div class="st-compose">
         <div class="stat-panel rv donut-panel">
-          <h3><span class="dot9"></span>Tashkilotlar turlari boʻyicha</h3>
+          <h3><span class="dot9"></span>Tashkilot turlari ulushi</h3>
           <div class="donut-wrap">
             ${donutSVG([
               { v: totals.maktab, c: '#2f54a8', c2: '#5c7ec9' },
-              { v: totals.dmtt, c: '#c9a227', c2: '#e3c668' },
-              { v: totals.other, c: '#157347', c2: '#3da57a' }
+              { v: totals.dmtt,   c: '#c9a227', c2: '#e3c668' },
+              { v: totals.other,  c: '#157347', c2: '#3da57a' }
             ], totalOrgs, 'tashkilot')}
             <div class="legend">
               <div class="li"><span class="sw c-m"></span>Maktablar <b>${totals.maktab}</b><i>${Math.round(pM)}%</i></div>
@@ -895,42 +976,89 @@
         </div>
 
         <div class="stat-panel rv">
-          <h3><span class="dot9"></span>Markaz xodimlari — hududlar boʻyicha</h3>
-          <div class="stack-rows">
-            ${[...DATA.districts].sort((a, b) => b.markaz.length - a.markaz.length).map((d, i) => {
-              const maxS = Math.max(...DATA.districts.map(x => x.markaz.length));
-              return `<a class="stack-row" href="#/hudud/${d.id}" style="--si:${i}">
-                <span class="sname">${esc(d.name)}</span>
-                <span class="sbar"><i class="sm" data-w="${Math.round(d.markaz.length / maxS * 100)}"></i></span>
-                <span class="stotal">${d.markaz.length}</span>
-              </a>`;
-            }).join('')}
+          <h3><span class="dot9"></span>Umumiy proporsiya</h3>
+          <div class="st-prop">
+            <div class="st-prop-bar">
+              <i class="pm" data-w="${Math.round(pM)}" title="Maktablar ${Math.round(pM)}%"><em>${Math.round(pM)}%</em></i>
+              <i class="pd" data-w="${Math.round(pD)}" title="DMTT ${Math.round(pD)}%"><em>${Math.round(pD)}%</em></i>
+              <i class="po" data-w="${Math.round(100 - pM - pD)}" title="Boshqa ${Math.round(100 - pM - pD)}%"><em>${Math.round(100 - pM - pD)}%</em></i>
+            </div>
+            <div class="st-prop-keys">
+              <span><span class="sw c-m"></span>Maktab</span>
+              <span><span class="sw c-d"></span>DMTT</span>
+              <span><span class="sw c-o"></span>Boshqa</span>
+            </div>
+            <p class="st-prop-note">Har 10 ta tashkilotdan taxminan ${Math.round(pM / 10)} tasi — umumtaʼlim maktabi.</p>
           </div>
         </div>
+      </div>
 
-        <div class="stat-panel rv wide">
-          <h3><span class="dot9"></span>Hududlar kesimida — maktab / DMTT / boshqa tashkilotlar</h3>
-          <div class="stack-rows two-col">
-            ${[...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).map((d, i) => {
-              const c = { maktab: 0, dmtt: 0, other: 0 };
-              d.orgs.forEach(o => c[catOfOrg(o)]++);
-              const w = n => Math.round(n / maxOrg * 100);
-              return `<a class="stack-row" href="#/hudud/${d.id}" style="--si:${i}">
-                <span class="sname">${esc(d.name)}</span>
-                <span class="sbar">
-                  <i class="sm" data-w="${w(c.maktab)}" title="Maktablar: ${c.maktab}"></i>
-                  <i class="sd" data-w="${w(c.dmtt)}" title="DMTT: ${c.dmtt}"></i>
-                  <i class="so" data-w="${w(c.other)}" title="Boshqa: ${c.other}"></i>
-                </span>
-                <span class="stotal">${d.orgs.length}</span>
-              </a>`;
-            }).join('')}
-          </div>
-          <div class="legend" style="flex-direction: row; gap: 22px; margin-top: 18px; flex-wrap: wrap">
-            <div class="li"><span class="sw c-m"></span>Maktablar</div>
-            <div class="li"><span class="sw c-d"></span>DMTT</div>
-            <div class="li"><span class="sw c-o"></span>Boshqa tashkilotlar</div>
-          </div>
+      <h2 class="section-title rv"><span class="bar"></span>Shaharlar va tumanlar <span class="count">taqqoslash</span></h2>
+      <div class="st-vs">
+        ${[
+          { label: 'Shaharlar', icon: CITY_ICON, set: cityAgg, accent: 'navy' },
+          { label: 'Tumanlar',  icon: ICONS.pin,  set: distAgg, accent: 'gold' }
+        ].map(g => `
+          <div class="st-vs-card stat-panel tilt rv st-vs-${g.accent}">
+            <div class="st-vs-head"><span class="st-vs-ic">${g.icon}</span><h3>${g.label}</h3><span class="st-vs-count">${g.set.count} hudud</span></div>
+            ${radialGauge(g.set.orgs, totalOrgs, g.set.share + '%', 'tashkilot', g.accent)}
+            <div class="st-vs-rows">
+              <div class="st-vs-row"><span>Tashkilot</span><b data-counter="${g.set.orgs}">0</b></div>
+              <div class="st-vs-row"><span>Markaz xodimi</span><b data-counter="${g.set.staff}">0</b></div>
+              <div class="st-vs-row"><span>Oʻrtacha / hudud</span><b data-counter="${g.set.avg}">0</b></div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <h2 class="section-title rv"><span class="bar"></span>Eng yirik hududlar <span class="count">top 5</span></h2>
+      <div class="stat-panel rv">
+        <div class="st-lead-board">${rankList(topDistricts, maxOrg)}</div>
+      </div>
+
+      <h2 class="section-title rv"><span class="bar"></span>Hududlar matritsasi <span class="count">intensivlik</span></h2>
+      <div class="stat-panel rv">
+        <h3><span class="dot9"></span>Tashkilotlar zichligi boʻyicha — kuchli rang = koʻp tashkilot</h3>
+        <div class="st-heat">
+          ${[...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).map((d, i) => {
+            const t = d.orgs.length;
+            const lvl = Math.max(1, Math.ceil(t / maxOrg * 5));
+            return `<a class="st-heat-cell h${lvl}" href="#/hudud/${d.id}" style="--si:${i}" title="${esc(d.name)}: ${t} tashkilot">
+              <span class="st-heat-ic">${isCity(d) ? CITY_ICON : ICONS.pin}</span>
+              <span class="st-heat-name">${esc(d.name)}</span>
+              <b data-counter="${t}">0</b>
+              <span class="st-heat-sub">${d.markaz.length} xodim</span>
+            </a>`;
+          }).join('')}
+        </div>
+        <div class="st-heat-scale">
+          <span>kam</span>
+          <i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i><i class="h5"></i>
+          <span>koʻp</span>
+        </div>
+      </div>
+
+      <h2 class="section-title rv"><span class="bar"></span>Hududlar kesimida tarkib <span class="count">maktab / DMTT / boshqa</span></h2>
+      <div class="stat-panel rv wide">
+        <div class="stack-rows two-col st-bars">
+          ${[...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).map((d, i) => {
+            const c = { maktab: 0, dmtt: 0, other: 0 };
+            d.orgs.forEach(o => c[catOfOrg(o)]++);
+            const w = n => Math.round(n / maxOrg * 100);
+            return `<a class="stack-row" href="#/hudud/${d.id}" style="--si:${i}">
+              <span class="sname">${esc(d.name)}</span>
+              <span class="sbar">
+                <i class="sm" data-w="${w(c.maktab)}" title="Maktablar: ${c.maktab}"></i>
+                <i class="sd" data-w="${w(c.dmtt)}"   title="DMTT: ${c.dmtt}"></i>
+                <i class="so" data-w="${w(c.other)}"  title="Boshqa: ${c.other}"></i>
+              </span>
+              <span class="stotal">${d.orgs.length}</span>
+            </a>`;
+          }).join('')}
+        </div>
+        <div class="legend st-bars-legend">
+          <div class="li"><span class="sw c-m"></span>Maktablar</div>
+          <div class="li"><span class="sw c-d"></span>DMTT</div>
+          <div class="li"><span class="sw c-o"></span>Boshqa tashkilotlar</div>
         </div>
       </div>`;
     enhance();
