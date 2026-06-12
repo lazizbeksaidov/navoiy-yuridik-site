@@ -873,10 +873,16 @@
     if (!authCtx || !authCtx.client) { rows.forEach(r => r.classList.add('doc-err')); return; }
     const paths = rows.map(r => r.dataset.docPath);
     try {
-      const { data, error } = await authCtx.client.storage.from('documents').createSignedUrls(paths, 3600);
-      if (error || !data) throw error || new Error('no data');
-      rows.forEach((r, i) => {
-        const u = data[i] && data[i].signedUrl;
+      const { data: { session } } = await authCtx.client.auth.getSession();
+      const res = await fetch(CFG.url + '/functions/v1/docurl', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.urls) throw new Error(data.error || 'no urls');
+      rows.forEach(r => {
+        const u = data.urls[r.dataset.docPath];
         if (u) {
           r.href = u; r.removeAttribute('aria-disabled'); r.classList.add('doc-ready');
           r.title = r.querySelector('.doc-info b').textContent + ' — ochish / yuklab olish';
