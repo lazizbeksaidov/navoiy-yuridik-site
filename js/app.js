@@ -972,6 +972,38 @@
     }).join('');
   }
 
+  // Haqiqiy geografik xarita (KMZ→tuman chegaralari, GEO_MAP). Tuman bosilsa o'tadi, rang=zichlik.
+  function geoMapSVG() {
+    if (!window.GEO_MAP) return '';
+    const byId = {}; DATA.districts.forEach(d => byId[d.id] = d);
+    const maxOrg = Math.max(...DATA.districts.map(d => d.orgs.length)) || 1;
+    let regions = '';
+    const bs = [];
+    for (const id in GEO_MAP.dist) {
+      const g = GEO_MAP.dist[id], d = byId[id];
+      if (!d) continue;
+      const t = d.orgs.length, lvl = Math.max(1, Math.ceil(t / maxOrg * 5)), nm = esc(d.name);
+      regions += `<a href="#/hudud/${id}" aria-label="${nm}"><path class="gm-region h${lvl}" d="${g.d}"><title>${nm}: ${t} tashkilot</title></path></a>`;
+      bs.push({ id, t, nm, x: g.cx, y: g.cy, ox: g.cx, oy: g.cy });
+    }
+    // declutter: yaqin badge'larni bir-biridan suramiz (janubiy zich klaster uchun)
+    const R = 28, MIN = 2 * R + 8;
+    for (let it = 0; it < 80; it++) {
+      for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) {
+        let dx = bs[j].x - bs[i].x, dy = bs[j].y - bs[i].y, dd = Math.hypot(dx, dy) || 0.1;
+        if (dd < MIN) { const p = (MIN - dd) / 2, ux = dx / dd, uy = dy / dd; bs[i].x -= ux * p; bs[i].y -= uy * p; bs[j].x += ux * p; bs[j].y += uy * p; }
+      }
+    }
+    let leads = '', badges = '';
+    for (const b of bs) {
+      if (Math.hypot(b.x - b.ox, b.y - b.oy) > R)
+        leads += `<line class="gm-lead" x1="${b.ox.toFixed(0)}" y1="${b.oy.toFixed(0)}" x2="${b.x.toFixed(0)}" y2="${b.y.toFixed(0)}"/>`;
+      badges += `<a href="#/hudud/${b.id}" class="gm-badge" aria-label="${b.nm}: ${b.t} tashkilot"><circle cx="${b.x.toFixed(0)}" cy="${b.y.toFixed(0)}" r="${R}"/><text class="gm-num" x="${b.x.toFixed(0)}" y="${b.y.toFixed(0)}">${b.t}</text><title>${b.nm}: ${b.t} tashkilot</title></a>`;
+    }
+    return `<div class="geo-wrap"><svg class="geo-svg" viewBox="0 0 ${GEO_MAP.w} ${GEO_MAP.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Navoiy viloyati hududlari xaritasi">
+      <g class="gm-regions">${regions}</g><g class="gm-leads">${leads}</g><g class="gm-badges">${badges}</g></svg></div>`;
+  }
+
   function renderStats() {
     const totals = { maktab: 0, dmtt: 0, other: 0 };
     DATA.districts.forEach(d => d.orgs.forEach(o => totals[catOfOrg(o)]++));
@@ -1015,17 +1047,6 @@
       </div>`;
     };
 
-    // Hududlar xaritasi — sxematik geografik joylashuv (left%, top%)
-    const GEO = { uchquduq: [20, 15], tomdi: [58, 14], zarafshon: [34, 33], konimex: [77, 43], navbahor: [52, 49], gozgon: [23, 60], nurota: [83, 65], karmana: [46, 67], navoiy: [36, 83], qiziltepa: [57, 86], xatirchi: [73, 80] };
-    const geoCells = DATA.districts.map(d => {
-      const pos = GEO[d.id] || [50, 50];
-      const t = d.orgs.length;
-      const lvl = Math.max(1, Math.ceil(t / maxOrg * 5));
-      const shortName = esc(d.name.replace(/ (shahri|tumani)$/i, ''));
-      return `<a class="geo-region h${lvl}${isCity(d) ? ' city' : ''}" href="#/hudud/${d.id}" style="left:${pos[0]}%;top:${pos[1]}%" title="${esc(d.name)}: ${t} tashkilot · ${d.markaz.length} xodim">
-        <span class="geo-rname">${shortName}</span><b>${t}</b>
-      </a>`;
-    }).join('');
 
     app.innerHTML = `
       <section class="dist-head rv">
@@ -1074,10 +1095,7 @@
       <h2 class="section-title rv"><span class="bar"></span>Hududlar xaritasi <span class="count">joylashuv</span></h2>
       <div class="stat-panel rv">
         <h3><span class="dot9"></span>Viloyat hududlari — ustiga bosib oʻtish mumkin · rang = tashkilotlar zichligi</h3>
-        <div class="geo-map">
-          <span class="geo-north"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Shimol</span>
-          ${geoCells}
-        </div>
+        ${geoMapSVG()}
         <div class="st-heat-scale">
           <span>kam</span><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i><i class="h5"></i><span>koʻp</span>
         </div>

@@ -2521,44 +2521,22 @@ body.dark .comp-pct.good{ color:#6fd0a3; } body.dark .comp-pct.low{ color:#f0a08
   .comp-label{ grid-area:label; } .comp-pct{ grid-area:pct; } .comp-bar{ grid-area:bar; } .comp-val{ grid-area:val; text-align:left; }
 }
 
-/* ===================== STATISTIKA — hududlar xaritasi (sxematik) ===================== */
-.geo-map{ position:relative; width:100%; aspect-ratio:16/9; margin-top:6px; border-radius:var(--r-md); overflow:hidden;
-  background:
-    radial-gradient(60% 80% at 30% 35%, rgba(92,126,201,.10), transparent 60%),
-    radial-gradient(50% 60% at 75% 70%, rgba(201,162,39,.08), transparent 60%),
-    linear-gradient(160deg, rgba(238,243,251,.92), rgba(224,233,247,.66));
-  border:1px dashed rgba(120,145,195,.45); }
-body.dark .geo-map{ background:
-    radial-gradient(60% 80% at 30% 35%, rgba(92,126,201,.16), transparent 60%),
-    radial-gradient(50% 60% at 75% 70%, rgba(201,162,39,.12), transparent 60%),
-    linear-gradient(160deg, rgba(28,42,76,.7), rgba(20,32,60,.55));
-  border-color:rgba(120,145,195,.3); }
-.geo-north{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:6; display:inline-flex; align-items:center; gap:5px;
-  font-size:10.5px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); }
-.geo-north svg{ width:13px; height:13px; }
-.geo-region{ position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; gap:1px;
-  min-width:78px; padding:7px 11px; border-radius:12px; text-decoration:none; text-align:center;
-  border:1px solid rgba(255,255,255,.55); box-shadow:var(--shadow-sm); transition:transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s; z-index:1; }
-.geo-region:hover{ transform:translate(-50%,-50%) scale(1.13); box-shadow:var(--shadow-lg); z-index:5; }
-.geo-rname{ font-size:11.5px; font-weight:700; line-height:1.05; }
-.geo-region b{ font-family:'Manrope',sans-serif; font-weight:800; font-size:17px; line-height:1; }
-.geo-region.city{ box-shadow:var(--shadow-sm), 0 0 0 2px rgba(201,162,39,.55) inset; }
-.geo-region.h1{ background:linear-gradient(150deg,#eef2fb,#e3eaf7); color:var(--navy-dark); }
-.geo-region.h2{ background:linear-gradient(150deg,#dbe5f7,#c6d6f1); color:var(--navy-dark); }
-.geo-region.h3{ background:linear-gradient(150deg,#9fb6e6,#7e9cda); color:#fff; }
-.geo-region.h4{ background:linear-gradient(150deg,#3f5fae,#2f54a8); color:#fff; }
-.geo-region.h5{ background:linear-gradient(150deg,var(--navy-dark),#3a5db0 70%,#c9a227); color:#fff; }
-body.dark .geo-region.h1{ background:linear-gradient(150deg,#243559,#1c2b4d); color:#cdd9f3; }
-body.dark .geo-region.h2{ background:linear-gradient(150deg,#2c4170,#223560); color:#dbe6ff; }
-body.dark .geo-region.h3{ background:linear-gradient(150deg,#3a5499,#2f4783); color:#fff; }
-body.dark .geo-region.h4{ background:linear-gradient(150deg,#496ac4,#3a5db0); color:#fff; }
-body.dark .geo-region.h5{ background:linear-gradient(150deg,#3a5db0,#4a6dc8 60%,#c9a227); color:#fff; }
-@media (max-width:820px){
-  .geo-map{ position:static; aspect-ratio:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; padding:14px; border-style:solid; }
-  .geo-region{ position:static !important; left:auto !important; top:auto !important; transform:none; min-width:0; }
-  .geo-region:hover{ transform:scale(1.05); }
-  .geo-north{ position:static; transform:none; grid-column:1 / -1; justify-content:center; margin-bottom:4px; }
-}
+/* ===================== STATISTIKA — hududlar xaritasi (haqiqiy SVG, KMZ'dan) ===================== */
+.geo-wrap{ width:100%; max-width:640px; margin:8px auto 0; padding:8px;
+  background: radial-gradient(80% 75% at 50% 42%, rgba(92,126,201,.08), transparent 72%); }
+.geo-svg{ width:100%; height:auto; display:block; overflow:visible; }
+.gm-region{ stroke:#fff; stroke-width:2.5; stroke-linejoin:round; cursor:pointer; transition:filter .2s, stroke-width .2s; }
+.gm-regions a:hover .gm-region{ filter:brightness(1.08) saturate(1.08); stroke-width:4; }
+.gm-region.h1{ fill:#dce6f8; } .gm-region.h2{ fill:#aec6ee; } .gm-region.h3{ fill:#7e9cda; } .gm-region.h4{ fill:#4a6ec4; } .gm-region.h5{ fill:#2f54a8; }
+.gm-badge circle{ fill:#16223f; stroke:#fff; stroke-width:3; cursor:pointer; transition:fill .2s; }
+.gm-badge:hover circle{ fill:#2f54a8; }
+.gm-num{ fill:#fff; font-family:'Manrope',sans-serif; font-weight:800; font-size:27px; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+.gm-lead{ stroke:#16223f; stroke-width:1.6; stroke-dasharray:3,3; opacity:.45; }
+body.dark .gm-lead{ stroke:#9bb4f0; }
+body.dark .geo-wrap{ background: radial-gradient(80% 75% at 50% 42%, rgba(92,126,201,.12), transparent 72%); }
+body.dark .gm-region{ stroke:#16223f; }
+body.dark .gm-region.h1{ fill:#2a3d63; } body.dark .gm-region.h2{ fill:#34508a; } body.dark .gm-region.h3{ fill:#3f5fae; } body.dark .gm-region.h4{ fill:#4a6ec4; } body.dark .gm-region.h5{ fill:#6b8bd4; }
+body.dark .gm-badge circle{ fill:#0b1426; stroke:#9bb4f0; }
 
 /* ===================== TASHKILOT HUJJATLARI ===================== */
 .doc-list{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr)); }
