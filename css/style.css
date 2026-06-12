@@ -2559,3 +2559,30 @@ body.dark .geo-region.h5{ background:linear-gradient(150deg,#3a5db0,#4a6dc8 60%,
   .geo-region:hover{ transform:scale(1.05); }
   .geo-north{ position:static; transform:none; grid-column:1 / -1; justify-content:center; margin-bottom:4px; }
 }
+
+/* ===================== TASHKILOT HUJJATLARI ===================== */
+.doc-list{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr)); }
+.doc-row{ display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--r-md); text-decoration:none;
+  background:linear-gradient(150deg, rgba(255,255,255,.82), rgba(255,255,255,.5)); border:1px solid var(--glass-border);
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.9); transition:transform .25s, box-shadow .25s, opacity .25s;
+  pointer-events:none; opacity:.62; }
+.doc-row.doc-ready{ pointer-events:auto; opacity:1; cursor:pointer; }
+.doc-row.doc-ready:hover{ transform:translateY(-3px); box-shadow:var(--shadow-md); }
+.doc-row.doc-err{ opacity:.5; }
+.doc-ic{ width:44px; height:44px; flex:0 0 auto; border-radius:12px; display:grid; place-items:center;
+  background:linear-gradient(145deg,#fbe9e6,#f6d6cf); color:#c0492f; box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.7); }
+.doc-ic svg{ width:22px; height:22px; }
+.doc-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.doc-info b{ font-size:14px; color:var(--navy-dark); line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.doc-sub{ font-size:11.5px; color:var(--muted); font-weight:600; }
+.doc-act{ flex:0 0 auto; width:34px; height:34px; display:grid; place-items:center; }
+.doc-dl{ width:20px; height:20px; color:var(--navy-light); display:none; }
+.doc-row.doc-ready .doc-dl{ display:block; }
+.doc-spin{ width:18px; height:18px; border-radius:50%; border:2px solid rgba(47,84,168,.25); border-top-color:var(--navy-light); animation:docSpin .8s linear infinite; }
+.doc-row.doc-ready .doc-spin, .doc-row.doc-err .doc-spin{ display:none; }
+@keyframes docSpin{ to{ transform:rotate(360deg); } }
+.doc-row.doc-err .doc-act::after{ content:'—'; color:var(--muted); font-weight:800; }
+body.dark .doc-row{ background:linear-gradient(150deg, rgba(40,58,100,.78), rgba(28,42,76,.55)); border-color:rgba(120,145,195,.3); }
+body.dark .doc-info b{ color:#dbe6ff; }
+body.dark .doc-ic{ background:linear-gradient(145deg,#4a2620,#3a1e18); color:#f0a08c; }
+body.dark .doc-dl{ color:#9bb4f0; }

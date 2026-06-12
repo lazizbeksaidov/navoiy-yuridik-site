@@ -833,6 +833,20 @@
         ${personHtml('Buxgalter', 'b', ICONS.calc, o.b, o._di, o._oi, true)}
       </div>
 
+      ${(o.docs && o.docs.length) ? `
+      <h2 class="section-title rv"><span class="bar"></span>Hujjatlar <span class="count">${o.docs.length}</span></h2>
+      <div class="doc-list rv">
+        ${o.docs.map(dc => {
+          const meta = DOC_META[dc.t] || { label: dc.t, icon: ICONS.file };
+          return `<a class="doc-row" data-doc-path="${esc(dc.p)}" target="_blank" rel="noopener" aria-disabled="true" title="${esc(meta.label)} — yuklanmoqda...">
+            <span class="doc-ic">${meta.icon}</span>
+            <span class="doc-info"><b>${esc(meta.label)}</b><span class="doc-sub">PDF hujjat</span></span>
+            <span class="doc-act"><span class="doc-spin" aria-hidden="true"></span>
+              <svg class="doc-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>
+          </a>`;
+        }).join('')}
+      </div>` : ''}
+
       <div class="detail-nav rv">
         <a class="btn-ghost" href="#/hudud/${d.id}">
           <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -842,6 +856,35 @@
         ${oi < d.orgs.length - 1 ? `<a class="btn-ghost" href="#/hudud/${d.id}/t/${oi + 1}">${esc(d.orgs[oi + 1].org)} →</a>` : ''}
       </div>`;
     enhance();
+    loadDocLinks();
+  }
+
+  // Hujjat turlari — yorliq + SVG ikonka (emoji yo'q)
+  const DOC_META = {
+    jamoa: { label: 'Jamoa shartnomasi', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>' },
+    ichki: { label: 'Ichki tartib qoidalari', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><path d="M4 4h16v16H4z"/><path d="M9 17h6"/></svg>' },
+    tatil: { label: 'Taʼtillar jadvali', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>' }
+  };
+
+  // Maxfiy bucket — har bir hujjat uchun signed URL (1 soat) yaratib, havolaga qo'yamiz
+  async function loadDocLinks() {
+    const rows = [...app.querySelectorAll('.doc-row[data-doc-path]')];
+    if (!rows.length) return;
+    if (!authCtx || !authCtx.client) { rows.forEach(r => r.classList.add('doc-err')); return; }
+    const paths = rows.map(r => r.dataset.docPath);
+    try {
+      const { data, error } = await authCtx.client.storage.from('documents').createSignedUrls(paths, 3600);
+      if (error || !data) throw error || new Error('no data');
+      rows.forEach((r, i) => {
+        const u = data[i] && data[i].signedUrl;
+        if (u) {
+          r.href = u; r.removeAttribute('aria-disabled'); r.classList.add('doc-ready');
+          r.title = r.querySelector('.doc-info b').textContent + ' — ochish / yuklab olish';
+        } else { r.classList.add('doc-err'); r.title = 'Hujjat topilmadi'; }
+      });
+    } catch (e) {
+      rows.forEach(r => { r.classList.add('doc-err'); r.title = 'Yuklab boʻlmadi'; });
+    }
   }
 
   /* ---------- Statistika sahifasi ---------- */
