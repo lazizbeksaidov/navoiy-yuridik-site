@@ -838,12 +838,17 @@
       <div class="doc-list rv">
         ${o.docs.map(dc => {
           const meta = DOC_META[dc.t] || { label: dc.t, icon: ICONS.file };
-          return `<a class="doc-row" data-doc-path="${esc(dc.p)}" target="_blank" rel="noopener" aria-disabled="true" title="${esc(meta.label)} — yuklanmoqda...">
+          return `<div class="doc-row" data-doc-path="${esc(dc.p)}" data-doc-name="${esc(meta.label)}.pdf">
             <span class="doc-ic">${meta.icon}</span>
             <span class="doc-info"><b>${esc(meta.label)}</b><span class="doc-sub">PDF hujjat</span></span>
-            <span class="doc-act"><span class="doc-spin" aria-hidden="true"></span>
-              <svg class="doc-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></span>
-          </a>`;
+            <span class="doc-act">
+              <span class="doc-spin" aria-hidden="true"></span>
+              <a class="doc-view" target="_blank" rel="noopener" aria-disabled="true" aria-label="Koʻrish" title="Koʻrish">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></a>
+              <a class="doc-dl-btn" target="_blank" rel="noopener" aria-disabled="true" aria-label="Yuklab olish" title="Yuklab olish">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></a>
+            </span>
+          </div>`;
         }).join('')}
       </div>` : ''}
 
@@ -871,25 +876,27 @@
     const rows = [...app.querySelectorAll('.doc-row[data-doc-path]')];
     if (!rows.length) return;
     if (!authCtx || !authCtx.client) { rows.forEach(r => r.classList.add('doc-err')); return; }
-    const paths = rows.map(r => r.dataset.docPath);
+    const items = rows.map(r => ({ p: r.dataset.docPath, fn: r.dataset.docName }));
     try {
       const { data: { session } } = await authCtx.client.auth.getSession();
       const res = await fetch(CFG.url + '/functions/v1/docurl', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths })
+        body: JSON.stringify({ items })
       });
       const data = await res.json();
       if (!res.ok || !data.urls) throw new Error(data.error || 'no urls');
       rows.forEach(r => {
         const u = data.urls[r.dataset.docPath];
-        if (u) {
-          r.href = u; r.removeAttribute('aria-disabled'); r.classList.add('doc-ready');
-          r.title = r.querySelector('.doc-info b').textContent + ' — ochish / yuklab olish';
-        } else { r.classList.add('doc-err'); r.title = 'Hujjat topilmadi'; }
+        const vw = r.querySelector('.doc-view'), dl = r.querySelector('.doc-dl-btn');
+        if (u && u.view) {
+          vw.href = u.view; vw.removeAttribute('aria-disabled');
+          dl.href = u.dl; dl.removeAttribute('aria-disabled');
+          r.classList.add('doc-ready');
+        } else { r.classList.add('doc-err'); }
       });
     } catch (e) {
-      rows.forEach(r => { r.classList.add('doc-err'); r.title = 'Yuklab boʻlmadi'; });
+      rows.forEach(r => r.classList.add('doc-err'));
     }
   }
 
