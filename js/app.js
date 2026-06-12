@@ -567,12 +567,36 @@
   function renderDistrict(id) {
     const d = DATA.districts.find(x => x.id === id);
     if (!d) { renderHome(); return; }
+    const dc = { maktab: 0, dmtt: 0, other: 0 };
+    d.orgs.forEach(o => dc[catOfOrg(o)]++);
+    const dTot = d.orgs.length || 1;
+    const dw = n => Math.round(n / dTot * 100);
     app.innerHTML = `
       <section class="dist-head rv">
         <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / ${esc(d.name)}</div>
         <h1>${esc(d.name)}</h1>
         <div class="sub">${esc(d.center)}</div>
       </section>
+
+      <div class="dist-stats rv">
+        <div class="ds-tiles">
+          <div class="ds-tile"><span class="ds-ic k-navy">${ICONS.team}</span><b data-counter="${d.markaz.length}">0</b><span>markaz xodimi</span></div>
+          <div class="ds-tile"><span class="ds-ic k-blue">${CHART_ICON}</span><b data-counter="${d.orgs.length}">0</b><span>tashkilot</span></div>
+          <div class="ds-tile"><span class="ds-ic k-blue">${ICONS.award}</span><b data-counter="${dc.maktab}">0</b><span>maktab</span></div>
+          <div class="ds-tile"><span class="ds-ic k-gold">${CITY_ICON}</span><b data-counter="${dc.dmtt}">0</b><span>DMTT</span></div>
+          <div class="ds-tile"><span class="ds-ic k-green">${ICONS.pin}</span><b data-counter="${dc.other}">0</b><span>boshqa</span></div>
+        </div>
+        <div class="ds-prop" title="Maktab ${dc.maktab} · DMTT ${dc.dmtt} · Boshqa ${dc.other}">
+          <i class="pm" data-w="${dw(dc.maktab)}"></i>
+          <i class="pd" data-w="${dw(dc.dmtt)}"></i>
+          <i class="po" data-w="${dw(dc.other)}"></i>
+        </div>
+        <div class="ds-keys">
+          <span><span class="sw c-m"></span>Maktab</span>
+          <span><span class="sw c-d"></span>DMTT</span>
+          <span><span class="sw c-o"></span>Boshqa</span>
+        </div>
+      </div>
 
       <h2 class="section-title rv"><span class="bar"></span>Yuridik xizmat markazi xodimlari
         <span class="count">${d.markaz.length}</span></h2>
@@ -736,7 +760,7 @@
       el.classList.add('done');
       animateCounter(el);
     });
-    app.querySelectorAll('.cbar i[data-w], .sbar i[data-w], .st-prop-bar i[data-w], .st-rank-bar i[data-w]').forEach((el, i) => {
+    app.querySelectorAll('.cbar i[data-w], .sbar i[data-w], .st-prop-bar i[data-w], .st-rank-bar i[data-w], .ds-prop i[data-w], .comp-bar i[data-w]').forEach((el, i) => {
       if (M && M.animate) {
         // transform asosida (performant): width darhol, scaleX spring bilan
         el.style.width = el.dataset.w + '%';
@@ -913,6 +937,40 @@
     const distAgg = aggOf(d => !isCity(d));
     const topDistricts = [...DATA.districts].sort((a, b) => b.orgs.length - a.orgs.length).slice(0, 5);
 
+    // Ma'lumot to'liqligi hisob-kitobi
+    const filledP = p => !!(p && p.fio && !/vakant/i.test(p.fio));
+    let rF = 0, kF = 0, bF = 0, posF = 0, telF = 0;
+    DATA.districts.forEach(d => d.orgs.forEach(o => {
+      if (filledP(o.r)) rF++;
+      if (filledP(o.k)) kF++;
+      if (filledP(o.b)) bF++;
+      ['r', 'k', 'b'].forEach(role => { const p = o[role]; if (filledP(p)) { posF++; if (p.tel && p.tel.length) telF++; } });
+    }));
+    let stPhoto = 0, stTug = 0, stN = 0;
+    DATA.districts.forEach(d => d.markaz.forEach(s => { if (filledP(s)) { stN++; if (s.photo) stPhoto++; if (s.tug) stTug++; } }));
+    const compRow = (label, val, total) => {
+      const pct = total ? Math.round(val / total * 100) : 0;
+      const lvl = pct >= 80 ? 'good' : pct >= 50 ? 'mid' : 'low';
+      return `<div class="comp-row">
+        <span class="comp-label">${label}</span>
+        <span class="comp-bar"><i class="${lvl}" data-w="${pct}"></i></span>
+        <span class="comp-val"><b>${val}</b><small>/ ${total}</small></span>
+        <span class="comp-pct ${lvl}">${pct}%</span>
+      </div>`;
+    };
+
+    // Hududlar xaritasi — sxematik geografik joylashuv (left%, top%)
+    const GEO = { uchquduq: [20, 15], tomdi: [58, 14], zarafshon: [34, 33], konimex: [77, 43], navbahor: [52, 49], gozgon: [23, 60], nurota: [83, 65], karmana: [46, 67], navoiy: [36, 83], qiziltepa: [57, 86], xatirchi: [73, 80] };
+    const geoCells = DATA.districts.map(d => {
+      const pos = GEO[d.id] || [50, 50];
+      const t = d.orgs.length;
+      const lvl = Math.max(1, Math.ceil(t / maxOrg * 5));
+      const shortName = esc(d.name.replace(/ (shahri|tumani)$/i, ''));
+      return `<a class="geo-region h${lvl}${isCity(d) ? ' city' : ''}" href="#/hudud/${d.id}" style="left:${pos[0]}%;top:${pos[1]}%" title="${esc(d.name)}: ${t} tashkilot · ${d.markaz.length} xodim">
+        <span class="geo-rname">${shortName}</span><b>${t}</b>
+      </a>`;
+    }).join('');
+
     app.innerHTML = `
       <section class="dist-head rv">
         <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Statistika</div>
@@ -957,6 +1015,18 @@
           </div>`).join('')}
       </div>
 
+      <h2 class="section-title rv"><span class="bar"></span>Hududlar xaritasi <span class="count">joylashuv</span></h2>
+      <div class="stat-panel rv">
+        <h3><span class="dot9"></span>Viloyat hududlari — ustiga bosib oʻtish mumkin · rang = tashkilotlar zichligi</h3>
+        <div class="geo-map">
+          <span class="geo-north"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Shimol</span>
+          ${geoCells}
+        </div>
+        <div class="st-heat-scale">
+          <span>kam</span><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i><i class="h5"></i><span>koʻp</span>
+        </div>
+      </div>
+
       <h2 class="section-title rv"><span class="bar"></span>Viloyat tarkibi <span class="count">${totalOrgs} tashkilot</span></h2>
       <div class="st-compose">
         <div class="stat-panel rv donut-panel">
@@ -990,6 +1060,19 @@
             </div>
             <p class="st-prop-note">Har 10 ta tashkilotdan taxminan ${Math.round(pM / 10)} tasi — umumtaʼlim maktabi.</p>
           </div>
+        </div>
+      </div>
+
+      <h2 class="section-title rv"><span class="bar"></span>Maʼlumot toʻliqligi <span class="count">to‘ldirilganlik</span></h2>
+      <div class="stat-panel rv">
+        <h3><span class="dot9"></span>Tashkilotlar masʼul xodimlari va markaz maʼlumotlari</h3>
+        <div class="comp-list">
+          ${compRow('Rahbarlar belgilangan', rF, totalOrgs)}
+          ${compRow('Kadrlar boʻlimi belgilangan', kF, totalOrgs)}
+          ${compRow('Buxgalterlar belgilangan', bF, totalOrgs)}
+          ${compRow('Telefon raqami koʻrsatilgan', telF, posF)}
+          ${compRow('Markaz xodimi rasmlari', stPhoto, stN)}
+          ${compRow('Tugʻilgan sanalar kiritilgan', stTug, stN)}
         </div>
       </div>
 
