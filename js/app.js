@@ -161,7 +161,8 @@
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
     chief: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
     team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-    calc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01"/></svg>'
+    calc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01"/></svg>',
+    cake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16"/><path d="M5 21v-8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8"/><path d="M4 15.5c1.2 0 1.2 1 2.4 1s1.2-1 2.4-1 1.2 1 2.4 1 1.2-1 2.4-1 1.2 1 2.4 1 1.2-1 2.4-1"/><path d="M9 8V6M12 8V5M15 8V6"/></svg>'
   };
 
   /* ---------- E'lon banneri ---------- */
@@ -332,32 +333,166 @@
     </div>`;
   }
 
-  /* ---------- Shu oyda tug'ilganlar ---------- */
+  /* ---------- Tug'ilgan kunlar ---------- */
   const MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
-  function birthdaysHTML() {
-    const mon = new Date().getMonth() + 1;
+
+  // (A) Bugungi tug'ilgan kun banneri — login qilingan kuni bosh sahifada chiqadi (sessiyada bir marta)
+  function birthdayBannerHTML() {
+    const now = new Date();
+    const td = now.getDate(), tm = now.getMonth() + 1, key = td + '.' + tm;
+    let seen = '';
+    try { seen = sessionStorage.getItem('bdaySeen') || ''; } catch (e) {}
+    if (seen === key) return '';
     const list = [];
     DATA.districts.forEach(d => d.markaz.forEach(s => {
       if (!s.tug) return;
-      const m = s.tug.match(/^(\d{1,2})\.(\d{1,2})\./);
-      if (m && +m[2] === mon) list.push({ s, d, day: +m[1] });
+      const m = s.tug.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      if (m && +m[1] === td && +m[2] === tm) list.push({ s, d, age: now.getFullYear() - +m[3] });
     }));
     if (!list.length) return '';
-    list.sort((a, b) => a.day - b.day);
+    const DECOR = `<svg class="bd-decor" viewBox="0 0 600 220" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+        <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".5">
+          <path d="M48 40l4 12 4-12"/><path d="M40 48l12 4 12-4"/>
+          <path d="M552 60l5 14 5-14"/><path d="M543 70l14 5 14-5"/>
+          <path d="M90 170l3 9 3-9"/><path d="M505 160l3 9 3-9"/>
+        </g>
+        <g stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".35">
+          <path d="M0 30 Q40 10 80 30 T160 30"/><path d="M600 190 Q560 170 520 190 T440 190"/>
+        </g>
+        <g fill="currentColor" opacity=".55">
+          <circle cx="150" cy="36" r="2"/><circle cx="470" cy="44" r="2.4"/><circle cx="60" cy="120" r="1.8"/><circle cx="540" cy="130" r="2"/>
+        </g>
+      </svg>`;
+    const star = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 21 12 17.3 6.5 21 8 13.4 3 9l6.4-.7L12 2Z"/></svg>';
+    const cards = list.map(({ s, d, age }) => `
+      <div class="bd-person">
+        <span class="bd-photo">
+          <span class="bd-photo-ring" aria-hidden="true"></span>
+          ${s.photo ? `<img src="${esc(s.photo)}" alt="" loading="lazy">` : ICONS.user}
+        </span>
+        <div class="bd-text">
+          <span class="bd-eyebrow">${star} Bugungi tugʻilgan kun</span>
+          <b class="bd-name">${esc(s.fio)}</b>
+          ${s.lavozim ? `<span class="bd-role">${esc(s.lavozim)}</span>` : ''}
+          <span class="bd-place">${ICONS.pin}${esc(d.name)}</span>
+          <span class="bd-age"><i>${age}</i> yoshga toʻldi</span>
+        </div>
+      </div>`).join('');
+    const heading = list.length === 1 ? 'Tugʻilgan kun muborak boʻlsin!' : `Bugun ${list.length} hamkasbimizning tugʻilgan kuni`;
     return `
-      <h2 class="section-title rv"><span class="bar"></span>🎂 ${MONTHS[mon-1]} oyida tugʻilganlar
-        <span class="count">${list.length}</span></h2>
-      <div class="bday-grid">
-        ${list.map(({ s, d, day }) => `
-          <a class="bday-card rv" href="#/hudud/${d.id}">
-            <span class="bday-photo">${s.photo ? `<img src="${esc(s.photo)}" alt="" loading="lazy">` : ICONS.user}</span>
-            <span class="bday-info">
-              <b>${esc(s.fio)}</b>
-              <span>${esc(d.name)}</span>
-            </span>
-            <span class="bday-day"><b>${day}</b><i>${MONTHS[mon-1].slice(0,3)}</i></span>
-          </a>`).join('')}
+      <div class="bd-banner" id="bdayBanner" data-key="${key}" role="region" aria-label="Bugungi tugʻilgan kunlar">
+        ${DECOR}
+        <button class="bd-close" id="bdayClose" aria-label="Yopish" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <div class="bd-head"><span class="bd-bar" aria-hidden="true"></span><h3>${esc(heading)}</h3></div>
+        <div class="bd-people${list.length > 1 ? ' multi' : ''}">${cards}</div>
+        <a class="bd-link" href="#/tugilgan-kunlar">Barcha tugʻilgan kunlar
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>`;
+  }
+
+  // bugungi banner — yopish tugmasi (delegatsiya, bir marta o'rnatiladi)
+  (function initBirthdayBanner() {
+    app.addEventListener('click', (e) => {
+      if (!e.target.closest('#bdayClose')) return;
+      const b = document.getElementById('bdayBanner');
+      if (!b) return;
+      b.classList.add('bd-out');
+      try { sessionStorage.setItem('bdaySeen', b.dataset.key); } catch (e2) {}
+      setTimeout(() => b.remove(), 380);
+    });
+  })();
+
+  // (B) Alohida "Tug'ilgan kunlar" sahifasi — oyma-oy kalendar
+  function renderBirthdays() {
+    const now = new Date();
+    const curMon = now.getMonth() + 1, curDay = now.getDate(), curYear = now.getFullYear();
+    const today0 = new Date(curYear, curMon - 1, curDay);
+    const all = [];
+    DATA.districts.forEach(d => d.markaz.forEach(s => {
+      if (!s.tug) return;
+      const m = s.tug.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      if (!m) return;
+      const day = +m[1], mon = +m[2], year = +m[3];
+      if (mon < 1 || mon > 12 || day < 1 || day > 31) return; // noto'g'ri sana — o'tkazib yuboriladi
+      const isToday = day === curDay && mon === curMon;
+      const turnsAge = curYear - year;
+      let next = new Date(curYear, mon - 1, day);
+      if (next < today0) next = new Date(curYear + 1, mon - 1, day);
+      const inDays = Math.round((next - today0) / 86400000);
+      all.push({ s, d, day, mon, year, isToday, turnsAge, inDays });
+    }));
+    const byMonth = MONTHS.map((_, i) => all.filter(x => x.mon === i + 1).sort((a, b) => a.day - b.day));
+    const upcoming = all.filter(x => x.inDays >= 0 && x.inDays <= 30).sort((a, b) => a.inDays - b.inDays);
+
+    const personRow = (x) => `
+      <a class="bd-row${x.isToday ? ' is-today' : ''}" href="#/hudud/${x.d.id}">
+        <span class="bd-row-photo">${x.s.photo ? `<img src="${esc(x.s.photo)}" alt="" loading="lazy">` : ICONS.user}</span>
+        <span class="bd-row-info">
+          <b>${esc(x.s.fio)}</b>
+          <span class="bd-row-place">${esc(x.d.name)}</span>
+        </span>
+        <span class="bd-row-meta">
+          ${x.isToday ? '<span class="bd-today-badge">Bugun</span>' : ''}
+          <span class="bd-row-day"><b>${x.day}</b><i>${MONTHS[x.mon-1].slice(0,3)}</i></span>
+          <span class="bd-row-age" title="shu yili toʻladigan yoshi">${x.turnsAge}</span>
+        </span>
+      </a>`;
+
+    const monthPanels = MONTHS.map((name, i) => {
+      const people = byMonth[i];
+      const isCur = (i + 1) === curMon;
+      const isPast = (i + 1) < curMon;
+      return `
+      <section class="bd-month rv${isCur ? ' cur' : ''}${isPast ? ' past' : ''}" style="--mi:${i}">
+        <header class="bd-month-head">
+          <span class="bd-month-no">${String(i + 1).padStart(2, '0')}</span>
+          <h3>${name}</h3>
+          ${isCur ? '<span class="bd-month-tag">Joriy oy</span>' : ''}
+          <span class="bd-month-count">${people.length}</span>
+        </header>
+        <div class="bd-month-body">
+          ${people.length
+            ? people.map(personRow).join('')
+            : `<div class="bd-empty">${ICONS.user}<span>maʼlumot yoʻq</span></div>`}
+        </div>
+      </section>`;
+    }).join('');
+
+    const upcomingStrip = upcoming.length ? `
+      <h2 class="section-title rv"><span class="bar"></span>Yaqin kunlarda
+        <span class="count">${upcoming.length}</span></h2>
+      <div class="bd-upcoming rv">
+        ${upcoming.map(x => `
+          <a class="bd-up-card${x.isToday ? ' is-today' : ''} tilt" href="#/hudud/${x.d.id}">
+            <span class="bd-up-photo">${x.s.photo ? `<img src="${esc(x.s.photo)}" alt="" loading="lazy">` : ICONS.user}</span>
+            <b>${esc(x.s.fio)}</b>
+            <span class="bd-up-place">${esc(x.d.name)}</span>
+            <span class="bd-up-when">${x.isToday ? 'Bugun' : x.inDays === 1 ? 'Ertaga' : x.inDays + ' kundan soʻng'}</span>
+            <span class="bd-up-date">${x.day} ${MONTHS[x.mon-1]}</span>
+          </a>`).join('')}
+      </div>` : '';
+
+    app.innerHTML = `
+      <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Tugʻilgan kunlar</div>
+      <section class="bd-page-hero rv">
+        <div class="bd-hero-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14l2 2 4-4"/></svg>
+        </div>
+        <div>
+          <h1>Tugʻilgan kunlar</h1>
+          <p>Markaz xodimlarining tugʻilgan kunlari oyma-oy tartibida. Joriy oy ajratib koʻrsatilgan, bugungi tugʻilgan kun egasi alohida belgilangan.</p>
+        </div>
+        <div class="bd-hero-stat"><b data-counter="${all.length}">0</b><span>jami</span></div>
+      </section>
+      ${upcomingStrip}
+      <h2 class="section-title rv"><span class="bar"></span>Oylar boʻyicha
+        <span class="count">12</span></h2>
+      <div class="bd-calendar">
+        ${monthPanels}
+      </div>`;
+    enhance();
   }
 
   /* ---------- views ---------- */
@@ -393,7 +528,7 @@
           <span class="float-chip c3"><b>${totalStaff}</b> markaz xodimi</span>
         </div>
       </section>
-      ${birthdaysHTML()}
+      ${birthdayBannerHTML()}
       ${[
         { title: 'Shaharlar', items: DATA.districts.filter(isCity), anchor: 'hududlar' },
         { title: 'Tumanlar', items: DATA.districts.filter(d => !isCity(d)), anchor: '' }
@@ -858,6 +993,7 @@
   function renderNav(activeId) {
     navEl.innerHTML =
       `<a class="dchip${activeId === 'stats' ? ' active' : ''}" href="#/statistika">${CHART_ICON}Statistika</a>` +
+      `<a class="dchip${activeId === 'bday' ? ' active' : ''}" href="#/tugilgan-kunlar">${ICONS.cake}Tugʻilgan kunlar</a>` +
       DATA.districts.map(d =>
         `<a class="dchip${d.id === activeId ? ' active' : ''}" href="#/hudud/${d.id}">${esc(d.name)}</a>`
       ).join('');
@@ -880,6 +1016,9 @@
     } else if (/^#\/statistika/.test(hash)) {
       renderNav('stats');
       renderStats();
+    } else if (/^#\/tugilgan-kunlar/.test(hash)) {
+      renderNav('bday');
+      renderBirthdays();
     } else {
       renderNav(null);
       renderHome();
@@ -1003,6 +1142,7 @@
   window.addEventListener('hashchange', updateDrawerActive);
   updateDrawerActive();
   document.getElementById('drawerLinks').addEventListener('click', () => setDrawer(false));
+  document.getElementById('drawerNav').addEventListener('click', () => setDrawer(false));
 
   // qulayliklar
   const fontBtn = document.getElementById('toolFont');
