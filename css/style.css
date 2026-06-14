@@ -96,8 +96,8 @@ body.dark::after { opacity: .05; }
 /* Sahifa o'tish animatsiyasi */
 #app.page-in { animation: pageIn .45s cubic-bezier(.22,.9,.3,1); }
 @keyframes pageIn {
-  0% { opacity: 0; transform: translateY(14px); }
-  100% { opacity: 1; transform: none; }
+  0% { transform: translateY(14px); }
+  100% { transform: none; }
 }
 
 /* ---------- Ambient animated background ---------- */
@@ -1946,6 +1946,11 @@ body.dark .ai-msg.bot { background: rgba(42,60,102,.7); border-color: rgba(120,1
 .ai-msg.typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--navy-light); animation: aiDot 1.2s infinite; }
 .ai-msg.typing i:nth-child(2){ animation-delay:.2s } .ai-msg.typing i:nth-child(3){ animation-delay:.4s }
 @keyframes aiDot { 0%,60%,100%{ transform: translateY(0); opacity:.4 } 30%{ transform: translateY(-5px); opacity:1 } }
+.ai-think { font-size: 12.5px; color: var(--navy-light); font-style: italic; animation: aiPulse 1.4s ease-in-out infinite; }
+@keyframes aiPulse { 0%,100%{ opacity:.5 } 50%{ opacity:1 } }
+.ai-msg.ai-src { margin-top: -4px; padding: 5px 11px; font-size: 11px; line-height: 1.4; color: var(--muted);
+  background: transparent; border: none; border-left: 2px solid var(--gold); border-radius: 0; max-width: 90%; opacity: .85; }
+body.dark .ai-msg.ai-src { background: transparent; color: var(--muted); }
 .ai-chips { display: flex; flex-direction: column; gap: 7px; align-items: flex-start; margin-top: 3px; }
 .ai-chips button {
   font-family: inherit; font-size: 12.5px; cursor: pointer;
@@ -2560,6 +2565,22 @@ body.dark .gm-badge circle{ fill:#0b1426; stroke:#9bb4f0; }
 .doc-act a:hover{ transform:translateY(-2px); }
 .doc-view{ color:var(--navy-light); }
 .doc-view:hover{ background:linear-gradient(145deg,#e7edfb,#d4def5); }
+/* Hujjat tahrirlash tugmalari (faqat admin rejimida ko'rinadi) */
+.doc-edit{ display:none; align-items:center; gap:6px; margin-left:4px; }
+body.admin .doc-edit{ display:inline-flex; }
+.doc-eb{ width:34px; height:34px; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,.6);
+  color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:transform .2s, color .2s, border-color .2s; }
+.doc-eb svg{ width:16px; height:16px; }
+.doc-eb:hover{ color:var(--navy-light); border-color:var(--navy-light); transform:translateY(-2px); }
+.doc-eb.del:hover{ color:#e5484d; border-color:#e5484d; }
+body.dark .doc-eb{ background:rgba(42,60,102,.55); border-color:rgba(120,145,195,.35); color:#c7d6f5; }
+.doc-add{ display:none; align-items:center; gap:7px; margin-top:14px; padding:10px 18px; border-radius:var(--r-md);
+  border:1.5px dashed var(--glass-border); background:rgba(255,255,255,.5); color:var(--navy-light); cursor:pointer;
+  font:inherit; font-weight:600; font-size:.92rem; transition:transform .2s, border-color .2s, background .2s; }
+.doc-add svg{ width:16px; height:16px; }
+body.admin .doc-add{ display:inline-flex; }
+.doc-add:hover{ border-color:var(--navy-light); transform:translateY(-2px); background:rgba(231,237,251,.7); }
+body.dark .doc-add{ background:rgba(42,60,102,.4); border-color:rgba(120,145,195,.35); color:#c7d6f5; }
 .doc-dl-btn{ color:#c0492f; }
 .doc-dl-btn:hover{ background:linear-gradient(145deg,#fbe9e6,#f6d6cf); }
 .doc-spin{ width:18px; height:18px; border-radius:50%; border:2px solid rgba(47,84,168,.25); border-top-color:var(--navy-light); animation:docSpin .8s linear infinite; }

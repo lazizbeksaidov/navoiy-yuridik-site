@@ -127,6 +127,47 @@
     if (error) alert('Saqlashda xatolik: ' + error.message);
   }
 
+  /* ---------- Rol va huquq: superadmin (Viloyat) hammasini, tuman xodimi faqat o'z hududini ---------- */
+  const SUPER = !!(authCtx && authCtx.profile && authCtx.profile.is_admin);
+  let MYDID = null;
+  if (authCtx && authCtx.profile && !SUPER && authCtx.profile.district) {
+    const md = DATA.districts.find(x => x.name === authCtx.profile.district);
+    MYDID = md ? md.id : null;
+  }
+  const CANEDIT = (did) => !!authCtx && (SUPER || (!!MYDID && did === MYDID));
+
+  // Saqlash: superadmin — butun baza (to'g'ridan-to'g'ri); tuman xodimi — faqat o'z hududi (edge funksiya orqali, server tekshiradi)
+  async function saveData(districtId) {
+    if (!authCtx) return;
+    if (SUPER) { await pushData(); return; }
+    const d = DATA.districts.find(x => x.id === (districtId || MYDID));
+    if (!d) return;
+    const clean = JSON.parse(JSON.stringify(d, (k, v) => k.startsWith('_') ? undefined : v));
+    try {
+      const { data: { session } } = await authCtx.client.auth.getSession();
+      const res = await fetch(CFG.url + '/functions/v1/staff-edit', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', payload: { district: clean } })
+      });
+      const r = await res.json().catch(() => ({}));
+      if (!res.ok || !r.ok) alert('Saqlashda xatolik: ' + (r.error || res.status));
+    } catch (e) { alert('Saqlashda xatolik: ' + e.message); }
+  }
+
+  // Fayl yuklash (kind='photo' yoki 'doc') — edge funksiya orqali; tuman tekshiruvi serverda
+  async function uploadFile(kind, key, blob, contentType) {
+    const { data: { session } } = await authCtx.client.auth.getSession();
+    const res = await fetch(CFG.url + '/functions/v1/staff-edit?up=' + kind, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'x-key': key, 'Content-Type': contentType },
+      body: blob
+    });
+    const r = await res.json().catch(() => ({}));
+    if (!res.ok || !r.ok) throw new Error(r.error || ('HTTP ' + res.status));
+    return r;
+  }
+
   /* ---------- Admin tahrirlari: indekslash + saqlangan o'zgarishlarni qo'llash ---------- */
   function getOverrides() {
     try { return JSON.parse(localStorage.getItem('overrides') || '{}'); } catch (e) { return {}; }
@@ -251,7 +292,7 @@
          </div>`
       : '';
     return `<div class="person ${cls}${detail ? ' detail' : ''}">
-      <button class="edit-btn" data-edit="org" data-d="${di}" data-i="${oi}" data-role="${cls}" title="Tahrirlash">${EDIT_ICON}</button>
+      ${CANEDIT(di) ? `<button class="edit-btn" data-edit="org" data-d="${di}" data-i="${oi}" data-role="${cls}" title="Tahrirlash">${EDIT_ICON}</button>` : ''}
       <div class="label">${icon}${label}</div>
       ${hasData
         ? `${p.fio ? `<div class="fio">${esc(p.fio)}</div>` : ''}
@@ -275,9 +316,9 @@
         <span class="orgc-name">${esc(o.org)}</span>
         <span class="orgc-sub">${o.r.fio ? esc(o.r.fio) : 'Rahbar koʻrsatilmagan'}</span>
       </span>
-      <button class="orgc-del edit-btn" data-orgdel data-d="${o._di}" data-i="${o._oi}" title="Tashkilotni oʻchirish" aria-label="Oʻchirish">
+      ${CANEDIT(o._di) ? `<button class="orgc-del edit-btn" data-orgdel data-d="${o._di}" data-i="${o._oi}" title="Tashkilotni oʻchirish" aria-label="Oʻchirish">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-      </button>
+      </button>` : ''}
       <span class="orgc-go" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </span>
@@ -307,7 +348,7 @@
       <div class="staff-photo">
         ${photo}
         <span class="staff-role${isChief ? ' chief' : ''}">${isChief ? 'MARKAZ BOSHLIGʻI' : 'BOSH YURISKONSULT'}</span>
-        <button class="edit-btn" data-edit="staff" data-d="${s._di}" data-i="${s._si}" title="Tahrirlash">${EDIT_ICON}</button>
+        ${CANEDIT(s._di) ? `<button class="edit-btn" data-edit="staff" data-d="${s._di}" data-i="${s._si}" title="Tahrirlash">${EDIT_ICON}</button>` : ''}
       </div>
       <div class="staff-body">
         <h4>${esc(s.fio)}</h4>
@@ -615,9 +656,9 @@
           <button class="fchip" data-f="other">Boshqa tashkilotlar</button>
         </div>
         <span class="org-count" id="orgCount">${d.orgs.length} ta tashkilot</span>
-        <button class="org-add edit-btn" id="orgAddBtn" data-d="${d.id}" title="Yangi tashkilot qoʻshish">
+        ${CANEDIT(d.id) ? `<button class="org-add edit-btn" id="orgAddBtn" data-d="${d.id}" title="Yangi tashkilot qoʻshish">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Tashkilot qoʻshish
-        </button>
+        </button>` : ''}
       </div>
       <div class="orgc-grid" id="orgList">
         ${d.orgs.map((o, i) => orgCard(o, i + 1)).join('')}
@@ -752,10 +793,24 @@
   }
 
   function enhance() {
+    const vh = window.innerHeight || 800;
     app.querySelectorAll('.rv:not(.in)').forEach((el, i) => {
       el.style.transitionDelay = Math.min(i % 12 * 45, 400) + 'ms';
-      revealObserver.observe(el);
+      const r = el.getBoundingClientRect();
+      if (r.top < vh && r.bottom > -10) {
+        // Ko'rinishdagi kontent darhol ochiladi (observer kechiksa ham ko'rinmas qolmaydi)
+        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
+      } else {
+        revealObserver.observe(el);
+      }
     });
+    // Xavfsizlik: 700ms ichida har qanday ochilmagan ko'rinishdagi element majburan ochiladi
+    setTimeout(() => {
+      app.querySelectorAll('.rv:not(.in)').forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.top < (window.innerHeight || 800) && r.bottom > -10) el.classList.add('in');
+      });
+    }, 700);
     app.querySelectorAll('[data-counter]:not(.done)').forEach(el => {
       el.classList.add('done');
       animateCounter(el);
@@ -833,24 +888,33 @@
         ${personHtml('Buxgalter', 'b', ICONS.calc, o.b, o._di, o._oi, true)}
       </div>
 
-      ${(o.docs && o.docs.length) ? `
-      <h2 class="section-title rv"><span class="bar"></span>Hujjatlar <span class="count">${o.docs.length}</span></h2>
+      ${((o.docs && o.docs.length) || CANEDIT(d.id)) ? `
+      <h2 class="section-title rv"><span class="bar"></span>Hujjatlar <span class="count">${(o.docs || []).length}</span></h2>
       <div class="doc-list rv">
-        ${o.docs.map(dc => {
+        ${(o.docs || []).map((dc, dci) => {
           const meta = DOC_META[dc.t] || { label: dc.t, icon: ICONS.file };
-          return `<div class="doc-row" data-doc-path="${esc(dc.p)}" data-doc-name="${esc(meta.label)}.pdf">
+          const dname = dc.n || meta.label;
+          return `<div class="doc-row" data-doc-path="${esc(dc.p)}" data-doc-name="${esc(dname)}.pdf">
             <span class="doc-ic">${meta.icon}</span>
-            <span class="doc-info"><b>${esc(meta.label)}</b><span class="doc-sub">PDF hujjat</span></span>
+            <span class="doc-info"><b>${esc(dname)}</b><span class="doc-sub">PDF hujjat</span></span>
             <span class="doc-act">
               <span class="doc-spin" aria-hidden="true"></span>
               <a class="doc-view" target="_blank" rel="noopener" aria-disabled="true" aria-label="Koʻrish" title="Koʻrish">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></a>
               <a class="doc-dl-btn" aria-disabled="true" aria-label="Yuklab olish" title="Yuklab olish" download>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></a>
+              ${CANEDIT(d.id) ? `<span class="doc-edit">
+                <button class="doc-eb" data-docreplace data-key="${esc(dc.p)}" title="PDFni almashtirish" aria-label="Almashtirish">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+                <button class="doc-eb del" data-docremove data-di="${d.id}" data-oi="${oi}" data-dci="${dci}" title="Hujjatni oʻchirish" aria-label="Oʻchirish">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+              </span>` : ''}
             </span>
           </div>`;
         }).join('')}
-      </div>` : ''}
+      </div>
+      ${CANEDIT(d.id) ? `<button class="doc-add" data-docadd data-di="${d.id}" data-oi="${oi}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Hujjat qoʻshish</button>` : ''}` : ''}
 
       <div class="detail-nav rv">
         <a class="btn-ghost" href="#/hudud/${d.id}">
@@ -879,15 +943,21 @@
     const items = rows.map(r => ({ p: r.dataset.docPath, fn: r.dataset.docName }));
     try {
       const { data: { session } } = await authCtx.client.auth.getSession();
-      const res = await fetch(CFG.url + '/functions/v1/docurl', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.urls) throw new Error(data.error || 'no urls');
+      // docurl funksiyasi 1 so'rovda 30 hujjat bilan cheklangan — ko'p bo'lsa bo'laklab yuboramiz
+      const CHUNK = 25;
+      const urls = {};
+      for (let i = 0; i < items.length; i += CHUNK) {
+        const res = await fetch(CFG.url + '/functions/v1/docurl', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: items.slice(i, i + CHUNK) })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.urls) throw new Error(data.error || 'no urls');
+        Object.assign(urls, data.urls);
+      }
       rows.forEach(r => {
-        const u = data.urls[r.dataset.docPath];
+        const u = urls[r.dataset.docPath];
         const vw = r.querySelector('.doc-view'), dl = r.querySelector('.doc-dl-btn');
         if (u && u.view) {
           vw.href = u.view; vw.removeAttribute('aria-disabled');
@@ -1718,7 +1788,7 @@
     if (document.body.classList.contains('admin')) { setAdmin(false); return; }
     if (authCtx) {
       // Server rejimi: huquq profil orqali aniqlanadi, parol so'ralmaydi
-      if (authCtx.profile && authCtx.profile.is_admin) { setAdmin(true); setDrawer(false); }
+      if (SUPER || MYDID) { setAdmin(true); setDrawer(false); }
       else alert('Sizda tahrirlash huquqi yoʻq. Administratorga murojaat qiling.');
       return;
     }
@@ -1818,11 +1888,9 @@
         const blob = await resizeImage(file, 500);
         hint.textContent = 'Yuklanmoqda...';
         const path = `${editTarget.di}-${editTarget.i}-${Date.now()}.jpg`;
-        const { error } = await authCtx.client.storage.from('staff').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
-        if (error) { hint.textContent = 'Xato: ' + error.message; return; }
-        const { data } = authCtx.client.storage.from('staff').getPublicUrl(path);
-        editTarget.obj.photo = data.publicUrl;
-        renderEpPrev(data.publicUrl);
+        const up = await uploadFile('photo', path, blob, 'image/jpeg');
+        editTarget.obj.photo = up.url;
+        renderEpPrev(up.url);
         hint.textContent = 'Yuklandi ✓ (Saqlashni bosing)';
       } catch (err) { hint.textContent = 'Xato: ' + err.message; }
       e.target.value = '';
@@ -1852,7 +1920,7 @@
       editTarget.obj.fio = fio;
       editTarget.obj.tel = tel;
       if (authCtx) {
-        pushData(); // umumiy bazaga — barcha foydalanuvchilarda yangilanadi
+        saveData(editTarget.di); // o'z hududi (tuman xodimi) yoki butun baza (superadmin)
       } else {
         const ov = getOverrides();
         const key = editTarget.type === 'org'
@@ -1875,27 +1943,97 @@
     const add = e.target.closest('#orgAddBtn');
     if (del) {
       e.preventDefault(); e.stopPropagation();
+      if (!CANEDIT(del.dataset.d)) return;
       const d = DATA.districts.find(x => x.id === del.dataset.d);
       const o = d && d.orgs[+del.dataset.i];
       if (!o) return;
       if (!confirm(`"${o.org}" tashkiloti oʻchirilsinmi? Bu amalni qaytarib boʻlmaydi.`)) return;
       d.orgs.splice(+del.dataset.i, 1);
       reindexOrgs(d);
-      await pushData();
+      await saveData(d.id);
       route();
     }
     if (add) {
       e.preventDefault(); e.stopPropagation();
+      if (!CANEDIT(add.dataset.d)) return;
       const d = DATA.districts.find(x => x.id === add.dataset.d);
       if (!d) return;
       const name = prompt('Yangi tashkilot nomi (masalan: 50-maktab yoki Soliq boʻlimi):');
       if (!name || !name.trim()) return;
       d.orgs.push({ org: name.trim(), r: { fio: '', tel: [] }, k: { fio: '', tel: [] }, b: { fio: '', tel: [] } });
       reindexOrgs(d);
-      await pushData();
+      await saveData(d.id);
       location.hash = `#/hudud/${d.id}/t/${d.orgs.length - 1}`;
     }
   }, true);
+
+  /* ---------- Hujjat (PDF) tahrirlash: almashtirish / oʻchirish / qoʻshish ---------- */
+  let docCtx = null;
+  const docFileInput = document.createElement('input');
+  docFileInput.type = 'file'; docFileInput.accept = 'application/pdf'; docFileInput.hidden = true;
+  document.body.appendChild(docFileInput);
+
+  app.addEventListener('click', async e => {
+    if (!authCtx || !document.body.classList.contains('admin')) return;
+    const rep = e.target.closest('[data-docreplace]');
+    const rem = e.target.closest('[data-docremove]');
+    const add = e.target.closest('[data-docadd]');
+    if (rep) {
+      e.preventDefault(); e.stopPropagation();
+      docCtx = { mode: 'replace', key: rep.dataset.key };
+      docFileInput.click();
+    } else if (add) {
+      e.preventDefault(); e.stopPropagation();
+      const di = add.dataset.di, oi = +add.dataset.oi;
+      if (!CANEDIT(di)) return;
+      const types = { '1': ['jamoa', null], '2': ['ichki', null], '3': ['tatil', null] };
+      const ch = prompt('Hujjat turi raqamini kiriting:\n1 — Jamoa shartnomasi\n2 — Ichki tartib qoidalari\n3 — Taʼtillar jadvali\n4 — Boshqa (nom yoziladi)');
+      if (ch === null) return;
+      let t = 'tatil', n = null;
+      if (types[ch]) { t = types[ch][0]; }
+      else { n = prompt('Hujjat nomi:'); if (!n || !n.trim()) return; n = n.trim(); }
+      docCtx = { mode: 'add', di, oi, t, n, key: `${di}/${oi}_${t}_${Date.now()}.pdf` };
+      docFileInput.click();
+    } else if (rem) {
+      e.preventDefault(); e.stopPropagation();
+      const di = rem.dataset.di, oi = +rem.dataset.oi, dci = +rem.dataset.dci;
+      if (!CANEDIT(di)) return;
+      const d = DATA.districts.find(x => x.id === di);
+      const o = d && d.orgs[oi];
+      if (!o || !o.docs || !o.docs[dci]) return;
+      if (!confirm('Bu hujjat roʻyxatdan oʻchirilsinmi?')) return;
+      o.docs.splice(dci, 1);
+      await saveData(di);
+      route();
+    }
+  }, true);
+
+  docFileInput.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file || !docCtx) return;
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) { alert('Faqat PDF fayl yuklanadi'); docCtx = null; return; }
+    if (file.size > 30 * 1024 * 1024) { alert('Fayl 30MB dan katta'); docCtx = null; return; }
+    const ctx = docCtx; docCtx = null;
+    try {
+      await uploadFile('doc', ctx.key, file, 'application/pdf');
+      if (ctx.mode === 'add') {
+        const d = DATA.districts.find(x => x.id === ctx.di);
+        const o = d && d.orgs[ctx.oi];
+        if (!o) return;
+        if (!o.docs) o.docs = [];
+        const doc = { p: ctx.key, t: ctx.t };
+        if (ctx.n) doc.n = ctx.n;
+        o.docs.push(doc);
+        await saveData(ctx.di);
+        alert('Hujjat qoʻshildi ✓');
+        route();
+      } else {
+        alert('PDF almashtirildi ✓');
+        loadDocLinks();
+      }
+    } catch (err) { alert('Yuklashda xatolik: ' + err.message); }
+  });
 
   // data.js eksport (tahrirlangan holatda)
   document.getElementById('adminExport').addEventListener('click', () => {
@@ -2147,6 +2285,13 @@
       body.appendChild(typing);
       body.scrollTop = body.scrollHeight;
 
+      // Hujjat ichidan javob biroz vaqt olishi mumkin — kutishda belgi
+      const DOC_HINT = /jamoa|shartnoma|ichki tartib|qoida|tatil|otpusk|jadval|grafik|hujjat|modda|band|dam olish/i;
+      let hintT = null;
+      if (DOC_HINT.test(q)) hintT = setTimeout(() => {
+        if (typing.isConnected) typing.innerHTML = '<span class="ai-think">Hujjat oʻqilmoqda, biroz kuting…</span>';
+      }, 3500);
+
       try {
         const { data: { session } } = await authCtx.client.auth.getSession();
         const res = await fetch(CFG.url + '/functions/v1/chat', {
@@ -2159,11 +2304,21 @@
           body: JSON.stringify({ question: q, history: hist.slice(0, -1) })
         });
         const data = await res.json();
+        if (hintT) clearTimeout(hintT);
         typing.remove();
         const ans = data.answer || data.error || 'Javob olinmadi.';
         addMsg(ans, 'bot');
+        // Manba (qaysi hujjatdan) — ishonch uchun
+        if (data.answer && Array.isArray(data.source) && data.source.length) {
+          const s = document.createElement('div');
+          s.className = 'ai-msg bot ai-src';
+          s.textContent = 'Manba: ' + data.source.join('; ');
+          body.appendChild(s);
+          body.scrollTop = body.scrollHeight;
+        }
         if (data.answer) hist.push({ role: 'model', text: data.answer });
       } catch (err) {
+        if (hintT) clearTimeout(hintT);
         typing.remove();
         addMsg('Ulanishda xatolik. Internetni tekshiring.', 'bot');
       }
