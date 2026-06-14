@@ -1902,63 +1902,27 @@ body.ai-open .ai-fab-ic { display: none; }
 body.ai-open .ai-fab-close { display: block; }
 body.ai-open .ai-fab::after { display: none; }
 
-/* ===== Lex AI launcher — tashqi huquqiy agent (glass pill, Gemini .ai-fab ustida) ===== */
-.lex-fab {
-  position: fixed; right: 22px; bottom: 148px; z-index: 69;
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 14px 7px 8px; border-radius: 999px;
-  text-decoration: none; cursor: pointer;
-  background: linear-gradient(165deg, rgba(255,255,255,.92), rgba(255,255,255,.74));
-  backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-lg);
-  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease, opacity .35s ease;
+/* ===== Lex AI — yuqori paneldagi tugma (tashqi huquqiy agent) ===== */
+.top-lex {
+  height: 44px; padding: 0 13px 0 5px; border-radius: 13px; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 9px; flex: none;
+  color: #fff; font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: .3px;
+  background: linear-gradient(145deg, rgba(255,255,255,.2), rgba(255,255,255,.06));
+  border: 1px solid rgba(255,255,255,.34);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 5px 14px rgba(0,0,0,.2);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), background .2s;
 }
-.lex-fab::before {
-  content: ''; position: absolute; left: 0; top: 13px; bottom: 13px; width: 3px;
-  border-radius: 0 3px 3px 0; background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+.top-lex:hover { transform: scale(1.05); background: rgba(255,255,255,.22); }
+.top-lex:focus-visible { outline: 2px solid rgba(255,255,255,.6); outline-offset: 2px; }
+.top-lex img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; flex: none; box-shadow: 0 2px 6px rgba(0,0,0,.28); }
+.top-lex-ext { width: 13px; height: 13px; opacity: .75; flex: none; transition: opacity .25s ease; }
+.top-lex:hover .top-lex-ext { opacity: 1; }
+@media (max-width: 760px) {
+  .top-lex { padding: 0; width: 44px; justify-content: center; gap: 0; }
+  .top-lex-txt, .top-lex-ext { display: none; }
+  .top-lex img { width: 30px; height: 30px; border-radius: 9px; }
 }
-.lex-fab-logo {
-  width: 36px; height: 36px; border-radius: 50%; object-fit: cover; display: block; flex: none;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6), 0 2px 6px rgba(31,59,115,.25);
-}
-.lex-fab-txt { display: flex; flex-direction: column; line-height: 1.18; }
-.lex-fab-txt b { font-size: 13.5px; font-weight: 800; color: var(--navy-dark); letter-spacing: .2px; }
-.lex-fab-txt em { font-size: 10.5px; font-style: normal; font-weight: 600; color: var(--muted); }
-.lex-fab-ext { width: 14px; height: 14px; color: var(--navy-light); opacity: .65; flex: none; transition: opacity .25s ease; }
-.lex-fab:hover { transform: scale(1.05) translateY(-1px); box-shadow: 0 18px 38px rgba(31,59,115,.28); }
-.lex-fab:hover .lex-fab-ext { opacity: 1; }
-.lex-fab:focus-visible { outline: none; box-shadow: var(--shadow-lg), 0 0 0 3px rgba(47,84,168,.22); }
-
-/* Gemini chat ochilganda joyni bo'shatib pastga tushib yashirinadi (hech qachon ustma-ust emas).
-   'body.ai-open' klassi js/app.js (~2200-qator) da o'rnatiladi — nomi o'zgarsa shu yerni ham yangilang. */
-body.ai-open .lex-fab {
-  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(34px) scale(.9);
-  transition: opacity .35s cubic-bezier(.22,.9,.3,1.3), transform .35s cubic-bezier(.22,.9,.3,1.3), visibility 0s linear .35s;
-}
-
-/* Dark mode — jonli .ai-panel retsepti bilan bir tizim */
-body.dark .lex-fab {
-  background: linear-gradient(165deg, rgba(28,42,76,.94), rgba(20,32,60,.84));
-  border-color: rgba(120,145,195,.35);
-  box-shadow: 0 24px 60px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.3);
-}
-body.dark .lex-fab-txt b { color: #dbe6ff; }
-body.dark .lex-fab-txt em { color: #9fb2d8; }
-body.dark .lex-fab-ext { color: #9fb2d8; }
-
-@media (max-width: 560px) {
-  .lex-fab { right: 16px; bottom: 140px; padding: 6px 12px 6px 7px; gap: 7px; }
-  .lex-fab-txt em { display: none; }
-  .lex-fab-txt b { font-size: 13px; }
-  .lex-fab-logo { width: 32px; height: 32px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lex-fab { transition: opacity .25s ease; }
-  .lex-fab:hover { transform: none; }
-  body.ai-open .lex-fab { transform: none; transition: opacity .25s ease, visibility 0s linear .25s; }
-}
-@media print { .lex-fab { display: none !important; } }
+@media print { .top-lex { display: none !important; } }
 
 .ai-panel {
   position: fixed; right: 22px; bottom: 150px; z-index: 70;

@@ -2511,8 +2511,7 @@
     if (!fab) return;
 
     // AI faqat server (login) rejimida ishlaydi (Gemini chat + Lex AI tashqi tugma)
-    const lexFab = document.getElementById('lexFab');
-    if (!authCtx) { fab.style.display = 'none'; panel.style.display = 'none'; if (lexFab) lexFab.style.display = 'none'; return; }
+    if (!authCtx) { fab.style.display = 'none'; panel.style.display = 'none'; return; }
 
     const hist = [];
     fab.addEventListener('click', () => {

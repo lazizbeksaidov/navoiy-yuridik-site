@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="img/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Navoiy Adliya">
-<link rel="stylesheet" href="css/style.css?v=49">
+<link rel="stylesheet" href="css/style.css?v=50">
 </head>
 <body>
 <script>if(self!==top){try{top.location=self.location}catch(e){document.documentElement.style.display='none'}}</script>
@@ -108,6 +108,11 @@
       <datalist id="searchHist"></datalist>
     </div>
     <div class="top-actions">
+      <a class="top-lex" id="lexTop" href="https://chatgpt.com/g/g-676742f9461481919cf0f53c0b7dc1cd-lex-ai" target="_blank" rel="noopener noreferrer" title="Lex AI — Huquqiy yordamchi (yangi oynada ochiladi)" aria-label="Lex AI — Huquqiy yordamchi (yangi oynada ochiladi)">
+        <img src="img/lex-ai.jpg" alt="Lex AI" width="32" height="32">
+        <span class="top-lex-txt">Lex AI</span>
+        <svg class="top-lex-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+      </a>
       <button class="top-btn magnet" id="langBtn" title="Alifboni almashtirish">КИР</button>
       <button class="top-btn magnet" id="themeBtn" title="Tun/kun rejimi" aria-label="Tun/kun rejimi">
         <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -235,16 +240,6 @@
 <main class="container" id="app"></main>
 
 
-<!-- ============ Lex AI — tashqi huquqiy yordamchi (Gemini fab ustida) ============ -->
-<a class="lex-fab" id="lexFab"
-   href="https://chatgpt.com/g/g-676742f9461481919cf0f53c0b7dc1cd-lex-ai"
-   target="_blank" rel="noopener noreferrer"
-   aria-label="Lex AI — Huquqiy yordamchi (yangi oynada ochiladi)" title="Lex AI — Huquqiy yordamchi">
-  <img class="lex-fab-logo" src="img/lex-ai.jpg" alt="Lex AI" width="36" height="36" loading="lazy" decoding="async">
-  <span class="lex-fab-txt"><b>Lex AI</b><em>Huquqiy yordamchi</em></span>
-  <svg class="lex-fab-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-</a>
-
 <!-- ============ AI yordamchi ============ -->
 <button class="ai-fab" id="aiFab" aria-label="AI yordamchi" title="AI yordamchi">
   <svg class="ai-fab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
@@ -319,11 +314,11 @@
 </footer>
 
 <script defer src="js/supabase.min.js"></script>
-<script defer src="js/auth-config.js?v=49"></script>
+<script defer src="js/auth-config.js?v=50"></script>
 <script defer src="js/qrcode.min.js"></script>
 <script defer src="js/motion.min.js"></script>
-<script defer src="js/geomap.js?v=49"></script>
-<script defer src="js/app.js?v=49"></script>
+<script defer src="js/geomap.js?v=50"></script>
+<script defer src="js/app.js?v=50"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
