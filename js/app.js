@@ -119,7 +119,7 @@
   // Server rejimida tahrirlarni umumiy bazaga yozish (e'lon ham saqlanadi)
   async function pushData() {
     if (!authCtx) return;
-    const clean = JSON.parse(JSON.stringify({ districts: DATA.districts, announcement: DATA.announcement || null },
+    const clean = JSON.parse(JSON.stringify({ districts: DATA.districts, announcement: DATA.announcement || null, buyruqlar: DATA.buyruqlar || null },
       (k, v) => k.startsWith('_') ? undefined : v));
     const { error } = await authCtx.client.from('site_data')
       .update({ data: clean, updated_by: authCtx.profile ? authCtx.profile.login : 'admin', updated_at: new Date().toISOString() })
@@ -1352,13 +1352,152 @@
     } catch (e) { panel.innerHTML = ''; }
   }
 
+  /* ---------- Yuqori tashkilot buyruqlari ---------- */
+  const ORD_ICONS = {
+    chevD: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+    chevU: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>',
+    ext: '<svg class="ord-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+    link: '<svg class="ord-lic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    view: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    dl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+    repl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>'
+  };
+
+  function ordDocRow(dc, ci, di) {
+    const dn = (dc.n || 'Hujjat').replace(/\.pdf$/i, '');
+    return `<div class="doc-row" data-doc-path="${esc(dc.p)}" data-doc-name="${esc(dn)}.pdf">
+      <span class="doc-ic">${ORD_ICONS.file}</span>
+      <span class="doc-info"><b>${esc(dn)}</b><span class="doc-sub">PDF hujjat</span></span>
+      <span class="doc-act">
+        <span class="doc-spin" aria-hidden="true"></span>
+        <a class="doc-view" target="_blank" rel="noopener" aria-disabled="true" aria-label="Koʻrish" title="Koʻrish">${ORD_ICONS.view}</a>
+        <a class="doc-dl-btn" aria-disabled="true" aria-label="Yuklab olish" title="Yuklab olish" download>${ORD_ICONS.dl}</a>
+        ${SUPER ? `<span class="doc-edit">
+          <button class="doc-eb" data-ord="repdoc" data-ci="${ci}" data-di="${di}" title="PDFni almashtirish" aria-label="Almashtirish">${ORD_ICONS.repl}</button>
+          <button class="doc-eb del" data-ord="deldoc" data-ci="${ci}" data-di="${di}" title="Oʻchirish" aria-label="Oʻchirish">${ORD_ICONS.trash}</button>
+        </span>` : ''}
+      </span>
+    </div>`;
+  }
+
+  function ordCatHTML(c, ci) {
+    const links = c.links || [], docs = c.docs || [];
+    return `<details class="ord-cat" data-ci="${ci}">
+      <summary>
+        <span class="ord-cat-t"><span class="ord-num">${ci + 1}</span><b>${esc(c.name)}</b></span>
+        <span class="ord-meta"><span class="ord-cnt">${links.length} havola · ${docs.length} hujjat</span><span class="ord-chev"><span class="cv cv-d">${ORD_ICONS.chevD}</span><span class="cv cv-u">${ORD_ICONS.chevU}</span></span></span>
+      </summary>
+      <div class="ord-body">
+        ${(links.length || SUPER) ? `<div class="ord-sub">Onlayn havolalar</div>
+        <div class="ord-links">
+          ${links.length ? links.map((lk, li) => `<div class="ord-link">
+            <a href="${esc(lk.u)}" target="_blank" rel="noopener noreferrer">${ORD_ICONS.link}<span>${esc(lk.n)}</span>${ORD_ICONS.ext}</a>
+            ${SUPER ? `<button class="ord-x" data-ord="dellink" data-ci="${ci}" data-li="${li}" title="Oʻchirish">${ORD_ICONS.x}</button>` : ''}
+          </div>`).join('') : (SUPER ? '<div class="ord-none">Havola yoʻq</div>' : '')}
+        </div>
+        ${SUPER ? `<button class="ord-addbtn" data-ord="addlink" data-ci="${ci}">${ORD_ICONS.plus} Havola qoʻshish</button>` : ''}` : ''}
+
+        ${(docs.length || SUPER) ? `<div class="ord-sub">Hujjatlar <span>(PDF)</span></div>
+        <div class="doc-list ord-docs">
+          ${docs.length ? docs.map((dc, di) => ordDocRow(dc, ci, di)).join('') : (SUPER ? '<div class="ord-none">Hujjat yoʻq</div>' : '')}
+        </div>
+        ${SUPER ? `<button class="ord-addbtn" data-ord="adddoc" data-ci="${ci}">${ORD_ICONS.plus} Hujjat qoʻshish</button>` : ''}` : ''}
+
+        ${SUPER ? `<div class="ord-cattools"><button data-ord="rencat" data-ci="${ci}">Nomini oʻzgartirish</button><button class="del" data-ord="delcat" data-ci="${ci}">Boʻlimni oʻchirish</button></div>` : ''}
+      </div>
+    </details>`;
+  }
+
+  function renderOrders() {
+    const cats = DATA.buyruqlar || [];
+    app.innerHTML = `
+      <section class="dist-head rv">
+        <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Buyruqlar</div>
+        <h1>Yuqori turuvchi tashkilot buyruqlari</h1>
+        <div class="sub">Yuqori turuvchi organlarning normativ-huquqiy hujjatlari hamda onlayn havolalari (boʻlimlar boʻyicha)</div>
+      </section>
+      <section class="ord-wrap rv">
+        ${cats.length ? cats.map((c, ci) => ordCatHTML(c, ci)).join('') : '<div class="ord-empty">Hozircha boʻlimlar yoʻq.</div>'}
+        ${SUPER ? `<button class="ord-newcat" data-ord="newcat">${ORD_ICONS.plus} Yangi boʻlim qoʻshish</button>` : ''}
+      </section>`;
+    enhance();
+    loadDocLinks();
+  }
+
+  async function handleOrderClick(e) {
+    const btn = e.target.closest('[data-ord]');
+    if (!btn || !SUPER) return;
+    e.preventDefault();
+    const act = btn.dataset.ord;
+    const cats = DATA.buyruqlar = DATA.buyruqlar || [];
+    if (act === 'newcat') {
+      const name = prompt('Yangi boʻlim nomi:');
+      if (!name || !name.trim()) return;
+      cats.push({ name: name.trim(), links: [], docs: [] });
+      await pushData(); renderOrders(); return;
+    }
+    const ci = +btn.dataset.ci;
+    const c = cats[ci]; if (!c) return;
+    if (act === 'rencat') {
+      const name = prompt('Boʻlim nomi:', c.name);
+      if (name === null || !name.trim()) return;
+      c.name = name.trim(); await pushData(); renderOrders(); return;
+    }
+    if (act === 'delcat') {
+      if (!confirm(`"${c.name}" boʻlimini (barcha havola va hujjatlari bilan) oʻchirasizmi?`)) return;
+      cats.splice(ci, 1); await pushData(); renderOrders(); return;
+    }
+    if (act === 'addlink') {
+      const n = prompt('Hujjat nomi:'); if (!n || !n.trim()) return;
+      const u = prompt('Havola (https://...):'); if (u === null) return;
+      if (!/^https?:\/\//i.test(u.trim())) { alert('Havola http(s):// bilan boshlanishi kerak'); return; }
+      (c.links = c.links || []).push({ n: n.trim(), u: u.trim() });
+      await pushData(); renderOrders(); return;
+    }
+    if (act === 'dellink') {
+      const li = +btn.dataset.li; (c.links || []).splice(li, 1);
+      await pushData(); renderOrders(); return;
+    }
+    if (act === 'deldoc') {
+      if (!confirm('Hujjatni oʻchirasizmi?')) return;
+      const di = +btn.dataset.di; (c.docs || []).splice(di, 1);
+      await pushData(); renderOrders(); return;
+    }
+    if (act === 'adddoc' || act === 'repdoc') {
+      const di = act === 'repdoc' ? +btn.dataset.di : -1;
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'application/pdf';
+      inp.onchange = async () => {
+        const file = inp.files && inp.files[0]; if (!file) return;
+        if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { alert('Faqat PDF fayl'); return; }
+        if (file.size > 30 * 1024 * 1024) { alert('Fayl 30MB dan katta'); return; }
+        btn.classList.add('busy');
+        try {
+          const key = di >= 0 ? c.docs[di].p : `buyruqlar/${ci}/${Date.now()}.pdf`;
+          await uploadFile('doc', key, file, 'application/pdf');
+          if (di >= 0) { c.docs[di].n = file.name.replace(/\.pdf$/i, ''); }
+          else { (c.docs = c.docs || []).push({ n: file.name.replace(/\.pdf$/i, ''), p: key }); }
+          await pushData(); renderOrders();
+        } catch (err) { alert('Yuklashda xatolik: ' + err.message); btn.classList.remove('busy'); }
+      };
+      inp.click(); return;
+    }
+  }
+  app.addEventListener('click', handleOrderClick);
+
   /* ---------- nav / routing ---------- */
   const CHART_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>';
+  const ORDERS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>';
 
   function renderNav(activeId) {
     navEl.innerHTML =
       `<a class="dchip${activeId === 'stats' ? ' active' : ''}" href="#/statistika">${CHART_ICON}Statistika</a>` +
       `<a class="dchip${activeId === 'bday' ? ' active' : ''}" href="#/tugilgan-kunlar">${ICONS.cake}Tugʻilgan kunlar</a>` +
+      `<a class="dchip${activeId === 'orders' ? ' active' : ''}" href="#/buyruqlar">${ORDERS_ICON}Buyruqlar</a>` +
       DATA.districts.map(d =>
         `<a class="dchip${d.id === activeId ? ' active' : ''}" href="#/hudud/${d.id}">${esc(d.name)}</a>`
       ).join('');
@@ -1384,6 +1523,9 @@
     } else if (/^#\/tugilgan-kunlar/.test(hash)) {
       renderNav('bday');
       renderBirthdays();
+    } else if (/^#\/buyruqlar/.test(hash)) {
+      renderNav('orders');
+      renderOrders();
     } else {
       renderNav(null);
       renderHome();
