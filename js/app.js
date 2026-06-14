@@ -1364,8 +1364,32 @@
     dl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
     repl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
-    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>'
+    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>',
+    miniLink: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+    miniFile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>'
   };
+  // 17 sektor ikonkasi (kategoriya tartibida); ortiqcha boʻlsa hujjat ikonkasi
+  const _i = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const ORD_CAT_ICONS = [
+    _i('<path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/><path d="M8 13h7M8 17h5"/>'),                                  /* 1 Umumiy */
+    _i('<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.3 3 3 6 3s6-1.7 6-3v-5"/>'),                                                                       /* 2 Maktablar */
+    _i('<rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/><rect x="8" y="3" width="8" height="8" rx="1.5"/>'),     /* 3 Bogʻchalar */
+    _i('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/>'),                                    /* 4 Bandlik */
+    _i('<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>'),                     /* 5 Iqtisodiyot */
+    _i('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),                                                                   /* 6 Madaniyat */
+    _i('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9 13l2 2 4-4"/>'),                                                          /* 7 MMT */
+    _i('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), /* 8 Oila */
+    _i('<path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M12 11c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4z"/>'),                   /* 9 Qishloq */
+    _i('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v6M9 11h6"/>'),                                                                          /* 10 SEO */
+    _i('<path d="M12 2.5S5 10 5 14a7 7 0 0 0 14 0c0-4-7-11.5-7-11.5z"/>'),                                                                                            /* 11 Suv */
+    _i('<path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/>'),                                                                     /* 12 Yoshlar */
+    _i('<path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 6 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7z"/><path d="M3.5 12h3l1.5-3 2 5 1.5-2h3"/>'),                /* 13 Tibbiyot */
+    _i('<path d="M12 2 7 9h3l-4 6h12l-4-6h3z"/><path d="M12 15v6"/>'),                                                                                                 /* 14 Oʻrmon */
+    _i('<path d="M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/>'),             /* 15 Obodonlashtirish */
+    _i('<circle cx="6" cy="11" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="18" cy="11" r="2"/><path d="M8.5 15.5c0-2 1.7-3 3.5-3s3.5 1 3.5 3-1.3 4-3.5 4-3.5-2-3.5-4z"/>'), /* 16 Veterinariya */
+    _i('<path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3l-2 1-2-1-2 1-2-1-2 1z"/><path d="M9 8h6M9 12h6M9 16h3"/>'),                                                        /* 17 Soliq */
+  ];
+  const ordCatIcon = (ci) => ORD_CAT_ICONS[ci] || ORD_ICONS.file;
 
   function ordDocRow(dc, ci, di) {
     const dn = (dc.n || 'Hujjat').replace(/\.pdf$/i, '');
@@ -1388,8 +1412,15 @@
     const links = c.links || [], docs = c.docs || [];
     return `<details class="ord-cat" data-ci="${ci}">
       <summary>
-        <span class="ord-cat-t"><span class="ord-num">${ci + 1}</span><b>${esc(c.name)}</b></span>
-        <span class="ord-meta"><span class="ord-cnt">${links.length} havola · ${docs.length} hujjat</span><span class="ord-chev"><span class="cv cv-d">${ORD_ICONS.chevD}</span><span class="cv cv-u">${ORD_ICONS.chevU}</span></span></span>
+        <span class="ord-cat-t">
+          <span class="ord-ic">${ordCatIcon(ci)}<span class="ord-n">${ci + 1}</span></span>
+          <b>${esc(c.name)}</b>
+        </span>
+        <span class="ord-meta">
+          ${links.length ? `<span class="ord-pill">${ORD_ICONS.miniLink}${links.length}</span>` : ''}
+          ${docs.length ? `<span class="ord-pill doc">${ORD_ICONS.miniFile}${docs.length}</span>` : ''}
+          <span class="ord-chev"><span class="cv cv-d">${ORD_ICONS.chevD}</span><span class="cv cv-u">${ORD_ICONS.chevU}</span></span>
+        </span>
       </summary>
       <div class="ord-body">
         ${(links.length || SUPER) ? `<div class="ord-sub">Onlayn havolalar</div>
@@ -1414,11 +1445,25 @@
 
   function renderOrders() {
     const cats = DATA.buyruqlar || [];
+    const totLinks = cats.reduce((a, c) => a + ((c.links && c.links.length) || 0), 0);
+    const totDocs = cats.reduce((a, c) => a + ((c.docs && c.docs.length) || 0), 0);
     app.innerHTML = `
-      <section class="dist-head rv">
+      <section class="dist-head rv ord-hero">
         <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Buyruqlar</div>
-        <h1>Yuqori turuvchi tashkilot buyruqlari</h1>
-        <div class="sub">Yuqori turuvchi organlarning normativ-huquqiy hujjatlari hamda onlayn havolalari (boʻlimlar boʻyicha)</div>
+        <div class="ord-hero-main">
+          <span class="ord-hero-ic">${ORDERS_ICON}</span>
+          <div class="ord-hero-txt">
+            <h1>Yuqori turuvchi tashkilot buyruqlari</h1>
+            <div class="sub">Yuqori turuvchi organlarning normativ-huquqiy hujjatlari hamda onlayn havolalari</div>
+          </div>
+        </div>
+        <div class="ord-stats">
+          <div class="ord-stat"><b>${cats.length}</b><span>boʻlim</span></div>
+          <span class="ord-stat-div" aria-hidden="true"></span>
+          <div class="ord-stat"><b>${totLinks}</b><span>onlayn havola</span></div>
+          <span class="ord-stat-div" aria-hidden="true"></span>
+          <div class="ord-stat"><b>${totDocs}</b><span>PDF hujjat</span></div>
+        </div>
       </section>
       <section class="ord-wrap rv">
         ${cats.length ? cats.map((c, ci) => ordCatHTML(c, ci)).join('') : '<div class="ord-empty">Hozircha boʻlimlar yoʻq.</div>'}
