@@ -119,7 +119,7 @@
   // Server rejimida tahrirlarni umumiy bazaga yozish (e'lon ham saqlanadi)
   async function pushData() {
     if (!authCtx) return;
-    const clean = JSON.parse(JSON.stringify({ districts: DATA.districts, announcement: DATA.announcement || null, buyruqlar: DATA.buyruqlar || null },
+    const clean = JSON.parse(JSON.stringify({ districts: DATA.districts, announcement: DATA.announcement || null, buyruqlar: DATA.buyruqlar || null, templates: DATA.templates || null },
       (k, v) => k.startsWith('_') ? undefined : v));
     const { error } = await authCtx.client.from('site_data')
       .update({ data: clean, updated_by: authCtx.profile ? authCtx.profile.login : 'admin', updated_at: new Date().toISOString() })
@@ -995,8 +995,8 @@
         const u = urls[r.dataset.docPath];
         const vw = r.querySelector('.doc-view'), dl = r.querySelector('.doc-dl-btn');
         if (u && u.view) {
-          vw.href = u.view; vw.removeAttribute('aria-disabled');
-          dl.href = u.dl; dl.removeAttribute('aria-disabled');
+          if (vw) { vw.href = u.view; vw.removeAttribute('aria-disabled'); }
+          if (dl) { dl.href = u.dl; dl.removeAttribute('aria-disabled'); }
           r.classList.add('doc-ready');
         } else { r.classList.add('doc-err'); }
       });
@@ -1573,15 +1573,95 @@
   }
   app.addEventListener('click', handleOrderClick);
 
+  /* ---------- Namunaviy hujjat shablonlari ---------- */
+  function tplRow(t, ti) {
+    const ext = (String(t.p).split('.').pop() || 'pdf').toLowerCase();
+    const nm = t.n || 'Shablon';
+    const isPdf = ext === 'pdf';
+    return `<div class="doc-row" data-doc-path="${esc(t.p)}" data-doc-name="${esc(nm)}.${esc(ext)}">
+      <span class="doc-ic tpl-ext tpl-${esc(ext)}">${ORD_ICONS.file}<span class="tpl-badge">${esc(ext.toUpperCase())}</span></span>
+      <span class="doc-info"><b>${esc(nm)}</b><span class="doc-sub">${esc(ext.toUpperCase())} · shablon</span></span>
+      <span class="doc-act">
+        <span class="doc-spin" aria-hidden="true"></span>
+        ${isPdf ? `<a class="doc-view" target="_blank" rel="noopener" aria-disabled="true" aria-label="Koʻrish" title="Koʻrish">${ORD_ICONS.view}</a>` : ''}
+        <a class="doc-dl-btn" aria-disabled="true" aria-label="Yuklab olish" title="Yuklab olish" download>${ORD_ICONS.dl}</a>
+        ${SUPER ? `<button class="doc-eb del" data-tpl="del" data-ti="${ti}" title="Oʻchirish" aria-label="Oʻchirish">${ORD_ICONS.trash}</button>` : ''}
+      </span>
+    </div>`;
+  }
+
+  function renderTemplates() {
+    const tpls = DATA.templates || [];
+    const groups = {};
+    tpls.forEach((t, i) => { const c = (t.cat || 'Umumiy').trim() || 'Umumiy'; (groups[c] = groups[c] || []).push({ t, i }); });
+    const cats = Object.keys(groups);
+    app.innerHTML = `
+      <section class="dist-head rv ord-hero">
+        <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Shablonlar</div>
+        <div class="ord-hero-main">
+          <span class="ord-hero-ic">${TPL_ICON}</span>
+          <div class="ord-hero-txt">
+            <h1>Namunaviy hujjat shablonlari</h1>
+            <div class="sub">Tayyor shablonlar — yuklab olib toʻldiring (shartnoma, ariza, buyruq va boshqalar)</div>
+          </div>
+        </div>
+      </section>
+      <section class="ord-wrap rv">
+        ${tpls.length ? cats.map((c) => `
+          <div class="tpl-group">
+            <h2 class="section-title"><span class="bar"></span>${esc(c)} <span class="count">${groups[c].length}</span></h2>
+            <div class="doc-list">${groups[c].map((x) => tplRow(x.t, x.i)).join('')}</div>
+          </div>`).join('') : `<div class="ord-empty">Hozircha shablon yoʻq.${SUPER ? ' Quyidagi tugma orqali qoʻshing.' : ''}</div>`}
+        ${SUPER ? `<button class="ord-newcat" data-tpl="add">${ORD_ICONS.plus} Shablon qoʻshish</button>` : ''}
+      </section>`;
+    enhance();
+    loadDocLinks();
+  }
+
+  async function handleTemplateClick(e) {
+    const btn = e.target.closest('[data-tpl]');
+    if (!btn || !SUPER) return;
+    e.preventDefault();
+    const act = btn.dataset.tpl;
+    const tpls = DATA.templates = DATA.templates || [];
+    if (act === 'del') {
+      if (!confirm('Shablonni oʻchirasizmi?')) return;
+      tpls.splice(+btn.dataset.ti, 1); await pushData(); renderTemplates(); return;
+    }
+    if (act === 'add') {
+      const n = prompt('Shablon nomi:'); if (!n || !n.trim()) return;
+      const cat = (prompt('Boʻlim (masalan: Shartnomalar, Arizalar, Buyruqlar):', 'Umumiy') || 'Umumiy').trim() || 'Umumiy';
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx';
+      inp.onchange = async () => {
+        const file = inp.files && inp.files[0]; if (!file) return;
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (!['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) { alert('Ruxsat: pdf, doc, docx, xls, xlsx, ppt, pptx'); return; }
+        if (file.size > 30 * 1024 * 1024) { alert('Fayl 30MB dan katta'); return; }
+        btn.classList.add('busy');
+        try {
+          const key = `shablonlar/${Date.now()}.${ext}`;
+          await uploadFile('tpl', key, file, file.type || 'application/octet-stream');
+          tpls.push({ n: n.trim(), p: key, cat });
+          await pushData(); renderTemplates();
+        } catch (err) { alert('Yuklashda xatolik: ' + err.message); btn.classList.remove('busy'); }
+      };
+      inp.click(); return;
+    }
+  }
+  app.addEventListener('click', handleTemplateClick);
+
   /* ---------- nav / routing ---------- */
   const CHART_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>';
   const ORDERS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>';
+  const TPL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6.5z"/><path d="M15 2v5h5"/><path d="M8 12h6M8 16h4M8 8h2"/></svg>';
 
   function renderNav(activeId) {
     navEl.innerHTML =
       `<a class="dchip${activeId === 'stats' ? ' active' : ''}" href="#/statistika">${CHART_ICON}Statistika</a>` +
       `<a class="dchip${activeId === 'bday' ? ' active' : ''}" href="#/tugilgan-kunlar">${ICONS.cake}Tugʻilgan kunlar</a>` +
       `<a class="dchip${activeId === 'orders' ? ' active' : ''}" href="#/buyruqlar">${ORDERS_ICON}Buyruqlar</a>` +
+      `<a class="dchip${activeId === 'tpl' ? ' active' : ''}" href="#/shablonlar">${TPL_ICON}Shablonlar</a>` +
       DATA.districts.map(d =>
         `<a class="dchip${d.id === activeId ? ' active' : ''}" href="#/hudud/${d.id}">${esc(d.name)}</a>`
       ).join('');
@@ -1611,6 +1691,9 @@
       renderNav('orders');
       const bm = hash.match(/^#\/buyruqlar\/(\d+)/);
       renderOrders(bm ? +bm[1] : -1);
+    } else if (/^#\/shablonlar/.test(hash)) {
+      renderNav('tpl');
+      renderTemplates();
     } else {
       renderNav(null);
       renderHome();

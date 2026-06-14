@@ -2301,6 +2301,16 @@ body.dark .sr-buy-item { background: rgba(120,145,195,.1); border-color: rgba(12
 body.dark .sr-buy-item.doc { color: #f0a9a9; background: rgba(200,80,80,.12); }
 @media (max-width: 620px) { .sr-buy-items { padding: 0 14px 12px 14px; } .sr-buy-head { padding: 12px 14px; } }
 
+/* Namunaviy hujjat shablonlari */
+.tpl-group { margin-bottom: 20px; }
+.tpl-ext { position: relative; overflow: visible; }
+.tpl-badge { position: absolute; bottom: -4px; right: -5px; font-size: 7.5px; font-weight: 800; padding: 1px 3px; border-radius: 4px;
+  background: var(--navy); color: #fff; line-height: 1.25; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.tpl-pdf .tpl-badge { background: #c0392b; }
+.tpl-doc .tpl-badge, .tpl-docx .tpl-badge { background: #2f54a8; }
+.tpl-xls .tpl-badge, .tpl-xlsx .tpl-badge { background: #1e8e5a; }
+.tpl-ppt .tpl-badge, .tpl-pptx .tpl-badge { background: #d35400; }
+
 /* ============================================================
    Statistika — yangilangan bento tartib + 3D doira
    ============================================================ */
