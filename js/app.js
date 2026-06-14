@@ -1332,12 +1332,15 @@
               ${s.topQuestions.length ? s.topQuestions.map(q => `<div class="ai-top-row"><span>${esc(q.k)}</span><b>${q.v}</b></div>`).join('') : '<div style="color:var(--muted);font-size:13px">—</div>'}
             </div>
           </div>
-          <div class="stat-panel" style="grid-column:1/-1">
-            <h3><span class="dot9"></span>Soʻnggi soʻrovlar</h3>
+          <details class="stat-panel ai-recent" style="grid-column:1/-1">
+            <summary>
+              <h3><span class="dot9"></span>Soʻnggi soʻrovlar</h3>
+              <span class="ai-recent-meta">${s.recent.length} ta<span class="ai-recent-chev" aria-hidden="true"><svg class="cv cv-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg><svg class="cv cv-u" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></span></span>
+            </summary>
             <div class="ai-top">
               ${s.recent.length ? s.recent.map(r => `<div class="ai-top-row"><span>${esc(r.q)}</span><b style="color:var(--muted);font-weight:600">${esc(r.login||'?')}</b></div>`).join('') : '<div style="color:var(--muted);font-size:13px">—</div>'}
             </div>
-          </div>
+          </details>
         </div>`;
     } catch (e) { panel.innerHTML = ''; }
   }

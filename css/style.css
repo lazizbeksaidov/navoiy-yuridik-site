@@ -2137,6 +2137,20 @@ body.dark .ai-top-row { background: rgba(42,60,102,.5); border-color: rgba(120,1
 body.dark .ai-top-row span { color: var(--text); }
 body.dark .ai-top-row b { color: #9db9f2; }
 
+/* Soʻnggi soʻrovlar — yigʻiladigan (default yopiq) panel */
+.ai-recent > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ai-recent > summary::-webkit-details-marker { display: none; }
+.ai-recent > summary h3 { margin: 0; }
+.ai-recent-meta { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--muted); white-space: nowrap; transition: color .2s ease; }
+.ai-recent-chev { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; }
+.ai-recent-chev .cv { width: 18px; height: 18px; }
+.ai-recent-chev .cv-u { display: none; }
+.ai-recent[open] .ai-recent-chev .cv-d { display: none; }
+.ai-recent[open] .ai-recent-chev .cv-u { display: inline; }
+.ai-recent[open] .ai-top { margin-top: 16px; }
+.ai-recent > summary:hover .ai-recent-meta { color: var(--navy-light); }
+body.dark .ai-recent > summary:hover .ai-recent-meta { color: #9db9f2; }
+
 /* ============================================================
    Statistika — yangilangan bento tartib + 3D doira
    ============================================================ */
