@@ -1,5 +1,5 @@
 // Minimal service worker — ilova qobig'ini keshlaydi (asosiy fayllar)
-const C = 'navoiy-v42';
+const C = 'navoiy-v43';
 const ASSETS = ['./', './index.html', './css/style.css?v=41', './js/app.js?v=41', './js/geomap.js?v=41',
   './js/auth-config.js?v=41', './js/supabase.min.js', './js/qrcode.min.js',
   './js/motion.min.js', './img/logo.png'];
