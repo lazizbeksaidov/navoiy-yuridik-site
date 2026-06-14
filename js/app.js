@@ -722,14 +722,49 @@
       });
     });
 
+    // Buyruqlar boʻyicha qidiruv (boʻlim nomi, havola nomi, hujjat nomi)
+    let buyHits = [];
+    (DATA.buyruqlar || []).forEach((c, ci) => {
+      const catMatch = (c.name || '').toLowerCase().includes(ql);
+      const links = (c.links || []).filter(lk => (lk.n || '').toLowerCase().includes(ql));
+      const docs = (c.docs || []).filter(dc => (dc.n || '').toLowerCase().includes(ql));
+      if (catMatch || links.length || docs.length)
+        buyHits.push({ ci, c, links: catMatch ? (c.links || []) : links, docs: catMatch ? (c.docs || []) : docs });
+    });
+
     let html = `<section class="dist-head rv">
       <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Qidiruv</div>
       <h1>Qidiruv natijalari: «${esc(q)}»</h1>
-      <div class="sub">${staffHits.length} markaz xodimi, ${orgHits.length} tashkilot topildi</div>
+      <div class="sub">${staffHits.length} markaz xodimi, ${orgHits.length} tashkilot${buyHits.length ? `, ${buyHits.length} buyruq boʻlimi` : ''} topildi</div>
     </section>`;
 
-    if (!staffHits.length && !orgHits.length) {
+    if (!staffHits.length && !orgHits.length && !buyHits.length) {
       html += '<div class="no-results">Hech narsa topilmadi. Qidiruv soʻzini oʻzgartirib koʻring.</div>';
+    }
+
+    if (buyHits.length) {
+      html += `<h2 class="section-title"><span class="bar"></span>Buyruqlar <span class="count">${buyHits.length}</span></h2>
+        <div class="sr-buy-wrap">`;
+      buyHits.forEach(h => {
+        const items = [
+          ...h.links.map(l => ({ t: 'link', n: l.n, u: l.u })),
+          ...h.docs.map(d => ({ t: 'doc', n: (d.n || '').replace(/\.pdf$/i, '') }))
+        ].slice(0, 8);
+        html += `<div class="sr-buy">
+          <a class="sr-buy-head" href="#/buyruqlar/${h.ci}">
+            <span class="ord-ic">${ordCatIcon(h.ci)}<span class="ord-n">${h.ci + 1}</span></span>
+            <b>${esc(h.c.name)}</b>
+            <svg class="sr-buy-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </a>
+          <div class="sr-buy-items">
+            ${items.map(it => it.t === 'link'
+              ? `<a class="sr-buy-item" href="${esc(it.u)}" target="_blank" rel="noopener noreferrer">${ORD_ICONS.miniLink}<span>${esc(it.n)}</span></a>`
+              : `<a class="sr-buy-item doc" href="#/buyruqlar/${h.ci}">${ORD_ICONS.miniFile}<span>${esc(it.n)}</span></a>`
+            ).join('')}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
     }
 
     if (staffHits.length) {
@@ -1443,7 +1478,7 @@
     </details>`;
   }
 
-  function renderOrders() {
+  function renderOrders(openIndex = -1) {
     const cats = DATA.buyruqlar || [];
     const totLinks = cats.reduce((a, c) => a + ((c.links && c.links.length) || 0), 0);
     const totDocs = cats.reduce((a, c) => a + ((c.docs && c.docs.length) || 0), 0);
@@ -1471,6 +1506,10 @@
       </section>`;
     enhance();
     loadDocLinks();
+    if (openIndex >= 0) {
+      const el = app.querySelectorAll('details.ord-cat')[openIndex];
+      if (el) { el.open = true; setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90); }
+    }
   }
 
   async function handleOrderClick(e) {
@@ -1570,7 +1609,8 @@
       renderBirthdays();
     } else if (/^#\/buyruqlar/.test(hash)) {
       renderNav('orders');
-      renderOrders();
+      const bm = hash.match(/^#\/buyruqlar\/(\d+)/);
+      renderOrders(bm ? +bm[1] : -1);
     } else {
       renderNav(null);
       renderHome();

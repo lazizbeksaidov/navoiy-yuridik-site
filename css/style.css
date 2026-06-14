@@ -2277,6 +2277,30 @@ body.dark .ord-cattools button { color: #cdddff; }
   .ord-body { padding: 2px 15px 18px; }
 }
 
+/* Qidiruvda buyruqlar natijasi */
+.sr-buy-wrap { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.sr-buy { border-radius: var(--r-md); background: linear-gradient(150deg, rgba(255,255,255,.8), rgba(255,255,255,.55));
+  border: 1px solid var(--glass-border); box-shadow: var(--shadow-md); overflow: hidden; }
+body.dark .sr-buy { background: linear-gradient(150deg, rgba(28,42,76,.7), rgba(20,32,60,.5)); border-color: rgba(120,145,195,.3); }
+.sr-buy-head { display: flex; align-items: center; gap: 13px; padding: 13px 18px; text-decoration: none; }
+.sr-buy-head:hover { background: rgba(47,84,168,.04); }
+body.dark .sr-buy-head:hover { background: rgba(120,145,195,.07); }
+.sr-buy-head .ord-ic { width: 40px; height: 40px; }
+.sr-buy-head .ord-ic svg { width: 21px; height: 21px; }
+.sr-buy-head b { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; color: var(--navy-dark); }
+body.dark .sr-buy-head b { color: #dbe6ff; }
+.sr-buy-arrow { width: 18px; height: 18px; color: var(--navy-light); flex: none; }
+.sr-buy-items { display: flex; flex-direction: column; gap: 6px; padding: 0 18px 14px 71px; }
+.sr-buy-item { display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-radius: 10px; text-decoration: none;
+  background: rgba(47,84,168,.05); border: 1px solid rgba(47,84,168,.1); color: var(--navy); font-size: 13px; font-weight: 600; }
+.sr-buy-item svg { width: 14px; height: 14px; flex: none; opacity: .8; }
+.sr-buy-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-buy-item:hover { background: rgba(47,84,168,.1); }
+.sr-buy-item.doc { color: #b23b3b; background: rgba(200,60,60,.06); border-color: rgba(200,60,60,.13); }
+body.dark .sr-buy-item { background: rgba(120,145,195,.1); border-color: rgba(120,145,195,.2); color: #cdddff; }
+body.dark .sr-buy-item.doc { color: #f0a9a9; background: rgba(200,80,80,.12); }
+@media (max-width: 620px) { .sr-buy-items { padding: 0 14px 12px 14px; } .sr-buy-head { padding: 12px 14px; } }
+
 /* ============================================================
    Statistika — yangilangan bento tartib + 3D doira
    ============================================================ */
