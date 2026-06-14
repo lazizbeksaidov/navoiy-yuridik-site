@@ -1125,6 +1125,15 @@
         <div class="sub">Navoiy viloyati yuridik xizmat markazlari boʻyicha umumiy hisobot</div>
       </section>
 
+      <h2 class="section-title rv"><span class="bar"></span>Hududlar xaritasi <span class="count">joylashuv</span></h2>
+      <div class="stat-panel rv">
+        <h3><span class="dot9"></span>Viloyat hududlari — ustiga bosib oʻtish mumkin · rang = tashkilotlar zichligi</h3>
+        ${geoMapSVG()}
+        <div class="st-heat-scale">
+          <span>kam</span><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i><i class="h5"></i><span>koʻp</span>
+        </div>
+      </div>
+
       ${(authCtx && authCtx.profile && authCtx.profile.is_admin) ? '<div id="aiStatsPanel" class="rv"></div>' : ''}
 
       <section class="st-lead rv">
@@ -1160,15 +1169,6 @@
             <b data-counter="${k.n}">0</b>
             <span class="st-kpi-l">${k.l}</span>
           </div>`).join('')}
-      </div>
-
-      <h2 class="section-title rv"><span class="bar"></span>Hududlar xaritasi <span class="count">joylashuv</span></h2>
-      <div class="stat-panel rv">
-        <h3><span class="dot9"></span>Viloyat hududlari — ustiga bosib oʻtish mumkin · rang = tashkilotlar zichligi</h3>
-        ${geoMapSVG()}
-        <div class="st-heat-scale">
-          <span>kam</span><i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i><i class="h5"></i><span>koʻp</span>
-        </div>
       </div>
 
       <h2 class="section-title rv"><span class="bar"></span>Viloyat tarkibi <span class="count">${totalOrgs} tashkilot</span></h2>
@@ -1310,7 +1310,12 @@
       const maxDay = Math.max(1, ...s.days.map(d => d.v));
       const dayLabel = k => { const p = k.split('-'); return p[2] + '.' + p[1]; };
       panel.innerHTML = `
-        <h2 class="section-title"><span class="bar"></span>AI yordamchi faolligi <span class="count">admin</span></h2>
+        <details class="ai-activity">
+          <summary>
+            <h2 class="section-title"><span class="bar"></span>AI yordamchi faolligi <span class="count">admin</span></h2>
+            <span class="ai-recent-chev" aria-hidden="true"><svg class="cv cv-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg><svg class="cv cv-u" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></span>
+          </summary>
+          <div class="ai-activity-body">
         <div class="hero-stats" style="margin-bottom:8px">
           <div class="stat tilt"><b>${s.today}</b><span>bugun savol</span></div>
           <div class="stat tilt"><b>${s.total}</b><span>7 kunda</span></div>
@@ -1341,7 +1346,9 @@
               ${s.recent.length ? s.recent.map(r => `<div class="ai-top-row"><span>${esc(r.q)}</span><b style="color:var(--muted);font-weight:600">${esc(r.login||'?')}</b></div>`).join('') : '<div style="color:var(--muted);font-size:13px">—</div>'}
             </div>
           </details>
-        </div>`;
+        </div>
+          </div>
+        </details>`;
     } catch (e) { panel.innerHTML = ''; }
   }
 

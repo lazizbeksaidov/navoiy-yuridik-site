@@ -2151,6 +2151,17 @@ body.dark .ai-top-row b { color: #9db9f2; }
 .ai-recent > summary:hover .ai-recent-meta { color: var(--navy-light); }
 body.dark .ai-recent > summary:hover .ai-recent-meta { color: #9db9f2; }
 
+/* AI yordamchi faolligi — butun panel yigʻiladigan (default YOPIQ) */
+.ai-activity { margin-bottom: 22px; }
+.ai-activity > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+.ai-activity > summary::-webkit-details-marker { display: none; }
+.ai-activity > summary .section-title { flex: 1; margin: 0; }
+.ai-activity > summary .ai-recent-chev { flex: none; color: var(--navy-light); }
+body.dark .ai-activity > summary .ai-recent-chev { color: #9fb2d8; }
+.ai-activity[open] > summary { margin-bottom: 16px; }
+.ai-activity[open] > summary .ai-recent-chev .cv-d { display: none; }
+.ai-activity[open] > summary .ai-recent-chev .cv-u { display: inline; }
+
 /* ============================================================
    Statistika — yangilangan bento tartib + 3D doira
    ============================================================ */
