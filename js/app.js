@@ -656,6 +656,14 @@
           <button class="fchip" data-f="other">Boshqa tashkilotlar</button>
         </div>
         <span class="org-count" id="orgCount">${d.orgs.length} ta tashkilot</span>
+        <span class="dist-export">
+          <button class="dx-btn" data-exp="vcf" data-d="${d.id}" title="Hududning barcha kontaktlarini telefon uchun yuklab olish (.vcf)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+            Kontaktlar (VCF)</button>
+          <button class="dx-btn" data-exp="csv" data-d="${d.id}" title="Excel (CSV) jadval koʻrinishida yuklab olish">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 13 6 5M15 13l-6 5"/></svg>
+            Excel</button>
+        </span>
         ${CANEDIT(d.id) ? `<button class="org-add edit-btn" id="orgAddBtn" data-d="${d.id}" title="Yangi tashkilot qoʻshish">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Tashkilot qoʻshish
         </button>` : ''}
@@ -1122,6 +1130,118 @@
       <g class="gm-regions">${regions}</g><g class="gm-leads">${leads}</g><g class="gm-badges">${badges}</g></svg></div>`;
   }
 
+  /* ---------- (1) Toʻldirilmagan maʼlumotlar ish roʻyxati + (8) Hujjat monitoringi ---------- */
+  const ROLE_LABELS = { r: 'Rahbar', k: 'Kadrlar boʻlimi', b: 'Buxgalter' };
+  const DQ_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9"/></svg>';
+  const DQ_CHEV = '<svg class="dq-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+  function scopedDistricts() { return SUPER ? DATA.districts : DATA.districts.filter(d => d.id === MYDID); }
+  function orgDataGaps(o) {
+    const miss = [];
+    ['r', 'k', 'b'].forEach(role => {
+      const p = o[role] || {};
+      const fio = (p.fio || '').trim();
+      if (/vakant/i.test(fio)) return;                 // lavozim boʻsh — kamchilik emas
+      if (!fio) { miss.push({ t: ROLE_LABELS[role] + ' kiritilmagan', k: 'fio' }); return; }
+      const hasTel = (p.tel || []).some(x => String(x || '').replace(/\D/g, '').length >= 5);
+      if (!hasTel) miss.push({ t: ROLE_LABELS[role] + ' — telefon yoʻq', k: 'tel' });
+    });
+    return miss;
+  }
+  function dqDone(title, msg) {
+    return `<h2 class="section-title rv"><span class="bar"></span>${title.h} <span class="count">${title.c}</span></h2>
+      <div class="stat-panel rv dq-done"><span class="dq-done-ic">${DQ_CHECK}</span>
+        <div><b>${title.ok}</b><span>${msg}</span></div></div>`;
+  }
+  function dqCat(d, rows, metaText, openFirst, tagFn) {
+    return `
+      <details class="dq-cat rv"${openFirst ? ' open' : ''}>
+        <summary class="dq-sum">
+          <span class="dq-sum-name">${ICONS.pin}${esc(d.name)}</span>
+          <span class="dq-sum-meta">${metaText}</span>
+          ${DQ_CHEV}
+        </summary>
+        <div class="dq-body">
+          ${rows.map(({ o, oi, miss }) => `
+            <a class="dq-org" href="#/hudud/${d.id}/t/${oi}">
+              <span class="dq-org-name">${esc(o.org)}</span>
+              <span class="dq-tags">${tagFn(miss)}</span>
+              <span class="dq-go" aria-hidden="true">›</span>
+            </a>`).join('')}
+        </div>
+      </details>`;
+  }
+
+  function gapWorklistHTML() {
+    if (!authCtx || !(SUPER || MYDID)) return '';
+    const scoped = scopedDistricts();
+    const per = scoped.map(d => {
+      const orgs = [];
+      d.orgs.forEach((o, oi) => { const miss = orgDataGaps(o); if (miss.length) orgs.push({ o, oi, miss }); });
+      return { d, orgs };
+    });
+    const withGaps = per.filter(x => x.orgs.length).sort((a, b) => b.orgs.length - a.orgs.length);
+    const TITLE = { h: 'Toʻldirilmagan maʼlumotlar', c: 'ish roʻyxati', ok: 'Barcha maʼlumotlar toʻldirilgan' };
+    if (!withGaps.length) return dqDone(TITLE, (SUPER ? 'Viloyat boʻyicha' : 'Sizning hududingizda') + ' masʼul xodim va telefon maydonlari toʻliq.');
+    const totalRoles = scoped.reduce((a, d) => a + d.orgs.length * 3, 0) || 1;
+    const totalGapFields = withGaps.reduce((a, x) => a + x.orgs.reduce((b, r) => b + r.miss.length, 0), 0);
+    const gapOrgs = withGaps.reduce((a, x) => a + x.orgs.length, 0);
+    const fillPct = Math.round((1 - totalGapFields / totalRoles) * 100);
+    const tagFn = miss => miss.map(m => `<span class="dq-tag k-${m.k}">${esc(m.t)}</span>`).join('');
+    const cats = withGaps.map((x, idx) => dqCat(x.d, x.orgs, `<b>${x.orgs.length}</b> ta tashkilotda kamchilik`, (!SUPER || idx === 0), tagFn)).join('');
+    return `
+      <h2 class="section-title rv"><span class="bar"></span>Toʻldirilmagan maʼlumotlar <span class="count">ish roʻyxati</span></h2>
+      <div class="stat-panel rv">
+        <div class="dq-head">
+          <div class="dq-head-txt">
+            <h3><span class="dot9"></span>${SUPER ? 'Viloyat boʻyicha kamchiliklar' : 'Sizning hududingizdagi kamchiliklar'}</h3>
+            <p class="dq-note">Quyidagi tashkilotlarda masʼul xodim yoki telefon raqami koʻrsatilmagan. Bosing — tashkilot sahifasiga oʻtib, tahrirlash rejimida toʻldiring.</p>
+          </div>
+          <div class="dq-ring" style="--p:${fillPct}"><span class="dq-ring-num">${fillPct}<i>%</i></span><span class="dq-ring-lbl">toʻldirilgan</span></div>
+        </div>
+        <div class="dq-summary-pills"><span class="dq-pill"><b>${gapOrgs}</b> tashkilot</span><span class="dq-pill"><b>${totalGapFields}</b> maydon</span></div>
+        <div class="dq-cats">${cats}</div>
+      </div>`;
+  }
+
+  function docMonitorHTML() {
+    if (!authCtx || !(SUPER || MYDID)) return '';
+    const TYPES = [['jamoa', 'Jamoa shartnomasi'], ['ichki', 'Ichki tartib'], ['tatil', 'Taʼtillar jadvali']];
+    const per = scopedDistricts().map(d => {
+      let total = 0;
+      const rows = [];
+      d.orgs.forEach((o, oi) => {
+        if (!['maktab', 'dmtt'].includes(catOfOrg(o))) return;
+        total++;
+        const have = new Set((o.docs || []).map(dc => dc.t));
+        const miss = TYPES.filter(([t]) => !have.has(t)).map(([, l]) => l);
+        if (miss.length) rows.push({ o, oi, miss });
+      });
+      return { d, rows, total };
+    }).filter(x => x.total > 0);
+    if (!per.length) return '';
+    const TITLE = { h: 'Hujjat monitoringi', c: 'maktab / DMTT', ok: 'Barcha majburiy hujjatlar mavjud' };
+    const totalTargets = per.reduce((a, x) => a + x.total, 0);
+    const gapCount = per.reduce((a, x) => a + x.rows.length, 0);
+    if (!gapCount) return dqDone(TITLE, 'Maktab va DMTTlarda jamoa shartnomasi, ichki tartib va taʼtillar jadvali toʻliq yuklangan.');
+    const withGaps = per.filter(x => x.rows.length).sort((a, b) => b.rows.length - a.rows.length);
+    const docPct = Math.round((1 - gapCount / totalTargets) * 100);
+    const tagFn = miss => miss.map(m => `<span class="dq-tag k-doc">${esc(m)} yoʻq</span>`).join('');
+    const cats = withGaps.map((x, idx) => dqCat(x.d, x.rows, `<b>${x.rows.length}</b> / ${x.total} maktab·DMTT hujjatsiz`, (!SUPER || idx === 0), tagFn)).join('');
+    return `
+      <h2 class="section-title rv"><span class="bar"></span>Hujjat monitoringi <span class="count">maktab / DMTT</span></h2>
+      <div class="stat-panel rv">
+        <div class="dq-head">
+          <div class="dq-head-txt">
+            <h3><span class="dot9"></span>Yetishmayotgan majburiy hujjatlar</h3>
+            <p class="dq-note">Maktab va DMTTlarda boʻlishi shart: jamoa shartnomasi, ichki tartib qoidalari, taʼtillar jadvali. Bosing — tashkilot sahifasida yuklang.</p>
+          </div>
+          <div class="dq-ring gold" style="--p:${docPct}"><span class="dq-ring-num">${docPct}<i>%</i></span><span class="dq-ring-lbl">hujjatli</span></div>
+        </div>
+        <div class="dq-summary-pills"><span class="dq-pill"><b>${gapCount}</b> tashkilot hujjatsiz</span><span class="dq-pill"><b>${totalTargets}</b> jami maktab·DMTT</span></div>
+        <div class="dq-cats">${cats}</div>
+      </div>`;
+  }
+
   function renderStats() {
     const totals = { maktab: 0, dmtt: 0, other: 0 };
     DATA.districts.forEach(d => d.orgs.forEach(o => totals[catOfOrg(o)]++));
@@ -1267,6 +1387,9 @@
           ${compRow('Tugʻilgan sanalar kiritilgan', stTug, stN)}
         </div>
       </div>
+
+      ${gapWorklistHTML()}
+      ${docMonitorHTML()}
 
       <h2 class="section-title rv"><span class="bar"></span>Shaharlar va tumanlar <span class="count">taqqoslash</span></h2>
       <div class="st-vs">
@@ -2092,6 +2215,54 @@
       new QRCode(cv, { text: 'tel:' + tel.replace(/\s/g, ''), width: 190, height: 190, correctLevel: QRCode.CorrectLevel.M });
       qrModal.classList.add('open');
     }
+  });
+
+  /* ---------- (2) Hududning kontaktlarini bir bosishda eksport (VCF / CSV) ---------- */
+  function districtContacts(d) {
+    const rows = [];
+    d.markaz.forEach(s => {
+      const fio = (s.fio || '').trim();
+      if (!fio || /vakant/i.test(fio)) return;
+      rows.push({ fio, role: (s.lavozim || 'Markaz xodimi'), org: 'Yuridik xizmat koʻrsatish markazi', tel: (s.tel || []).filter(Boolean) });
+    });
+    d.orgs.forEach(o => {
+      [['r', 'Rahbar'], ['k', 'Kadrlar boʻlimi'], ['b', 'Buxgalter']].forEach(([role, lbl]) => {
+        const p = o[role] || {}; const fio = (p.fio || '').trim();
+        if (!fio || /vakant/i.test(fio)) return;
+        rows.push({ fio, role: lbl, org: o.org, tel: (p.tel || []).filter(Boolean) });
+      });
+    });
+    return rows;
+  }
+  function rowsToVCF(rows) {
+    return rows.map(r => {
+      const tels = r.tel.map(t => 'TEL;TYPE=CELL:' + String(t).replace(/\s/g, '')).filter(x => x.length > 13);
+      return ['BEGIN:VCARD', 'VERSION:3.0', 'FN:' + r.fio, 'ORG:' + r.org, 'TITLE:' + r.role, ...tels, 'END:VCARD'].join('\r\n');
+    }).join('\r\n');
+  }
+  function rowsToCSV(rows) {
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const head = ['F.I.O', 'Lavozim', 'Tashkilot', 'Telefon'].map(q).join(',');
+    const body = rows.map(r => [r.fio, r.role, r.org, r.tel.join(' / ')].map(q).join(',')).join('\r\n');
+    return '﻿' + head + '\r\n' + body;   // BOM — Excel UTF-8 ni toʻgʻri oʻqisin
+  }
+  function downloadBlob(name, blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  app.addEventListener('click', e => {
+    const ex = e.target.closest('[data-exp]');
+    if (!ex) return;
+    const d = DATA.districts.find(x => x.id === ex.dataset.d);
+    if (!d) return;
+    const rows = districtContacts(d);
+    if (!rows.length) { alert('Eksport uchun kontakt topilmadi.'); return; }
+    const base = (d.name || 'hudud').replace(/[^\wЀ-ӿ]+/g, '_') + '_kontaktlar';
+    if (ex.dataset.exp === 'vcf') downloadBlob(base + '.vcf', new Blob([rowsToVCF(rows)], { type: 'text/vcard;charset=utf-8' }));
+    else downloadBlob(base + '.csv', new Blob([rowsToCSV(rows)], { type: 'text/csv;charset=utf-8' }));
   });
 
   /* ---------- Parallax (sichqoncha) ---------- */

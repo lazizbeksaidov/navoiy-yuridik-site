@@ -2789,3 +2789,73 @@ body.dark .doc-ic{ background:linear-gradient(145deg,#4a2620,#3a1e18); color:#f0
 body.dark .doc-act a{ background:rgba(40,56,92,.5); border-color:rgba(120,145,195,.3); }
 body.dark .doc-view{ color:#9bb4f0; }
 body.dark .doc-dl-btn{ color:#f0a08c; }
+
+/* ===================== (2) Hududning kontaktlarini eksport ===================== */
+.dist-export{ display:inline-flex; gap:8px; flex-wrap:wrap; }
+.dx-btn{ display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:12px; cursor:pointer; font:inherit; font-weight:600; font-size:.85rem;
+  color:var(--navy-light); background:rgba(255,255,255,.72); border:1px solid var(--glass-border); box-shadow:var(--shadow-sm); transition:transform .2s, background .2s, border-color .2s; }
+.dx-btn svg{ width:17px; height:17px; flex:0 0 auto; }
+.dx-btn:hover{ transform:translateY(-2px); border-color:var(--navy-light); background:linear-gradient(145deg,#e7edfb,#d4def5); }
+body.dark .dx-btn{ background:rgba(42,60,102,.55); border-color:rgba(120,145,195,.35); color:#c7d6f5; }
+body.dark .dx-btn:hover{ background:rgba(52,72,122,.7); }
+
+/* ===================== (1)+(8) Ma'lumot ish ro'yxati / Hujjat monitoringi ===================== */
+.dq-head{ display:flex; align-items:center; gap:18px; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px; }
+.dq-head-txt{ flex:1; min-width:220px; }
+.dq-head-txt h3{ margin:0 0 5px; }
+.dq-note{ margin:0; font-size:12.5px; color:var(--muted); line-height:1.55; max-width:62ch; }
+.dq-ring{ --p:0; width:90px; height:90px; flex:0 0 auto; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:conic-gradient(var(--navy-light) calc(var(--p)*1%), rgba(140,160,200,.18) 0); position:relative; }
+.dq-ring.gold{ background:conic-gradient(var(--gold) calc(var(--p)*1%), rgba(140,160,200,.18) 0); }
+.dq-ring::before{ content:''; position:absolute; inset:9px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(31,59,115,.12) inset; }
+.dq-ring-num{ position:relative; font-family:'Manrope',sans-serif; font-weight:800; font-size:21px; color:var(--navy); line-height:1; }
+.dq-ring-num i{ font-size:12px; font-style:normal; color:var(--muted); }
+.dq-ring-lbl{ position:relative; font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-top:3px; }
+.dq-summary-pills{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.dq-pill{ display:inline-flex; align-items:center; gap:7px; padding:6px 14px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted);
+  background:rgba(140,160,200,.12); border:1px solid var(--glass-border); }
+.dq-pill b{ font-family:'Manrope',sans-serif; font-weight:800; color:var(--navy); font-size:14px; }
+.dq-cats{ display:flex; flex-direction:column; gap:10px; }
+.dq-cat{ border-radius:var(--r-md); border:1px solid var(--glass-border); overflow:hidden;
+  background:linear-gradient(150deg, rgba(255,255,255,.7), rgba(255,255,255,.45)); }
+.dq-sum{ display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; list-style:none; user-select:none; }
+.dq-sum::-webkit-details-marker{ display:none; }
+.dq-sum-name{ display:inline-flex; align-items:center; gap:8px; font-weight:700; color:var(--navy-dark); font-size:14.5px; flex:1; min-width:0; }
+.dq-sum-name svg{ width:17px; height:17px; color:var(--navy-light); flex:0 0 auto; }
+.dq-sum-meta{ font-size:12.5px; color:var(--muted); font-weight:600; white-space:nowrap; }
+.dq-sum-meta b{ color:#c0492f; font-family:'Manrope',sans-serif; font-weight:800; }
+.dq-chev{ width:18px; height:18px; color:var(--muted); transition:transform .25s; flex:0 0 auto; }
+details[open] .dq-chev{ transform:rotate(180deg); }
+.dq-body{ display:flex; flex-direction:column; gap:7px; padding:2px 12px 14px; }
+.dq-org{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:13px; text-decoration:none;
+  background:rgba(255,255,255,.62); border:1px solid var(--glass-border); transition:transform .18s, box-shadow .18s; }
+.dq-org:hover{ transform:translateX(3px); box-shadow:var(--shadow-sm); }
+.dq-org-name{ flex:1; min-width:0; font-weight:600; font-size:13.5px; color:var(--navy-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dq-tags{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.dq-tag{ font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+.dq-tag.k-fio{ background:rgba(192,73,47,.12); color:#c0492f; }
+.dq-tag.k-tel{ background:rgba(201,162,39,.18); color:#a8821a; }
+.dq-tag.k-doc{ background:rgba(47,84,168,.12); color:var(--navy-light); }
+.dq-go{ color:var(--muted); font-size:21px; font-weight:700; flex:0 0 auto; line-height:1; }
+.dq-done{ display:flex; align-items:center; gap:16px; }
+.dq-done-ic{ width:52px; height:52px; flex:0 0 auto; border-radius:14px; display:grid; place-items:center; color:var(--green);
+  background:linear-gradient(145deg, rgba(70,178,131,.16), rgba(21,115,71,.1)); }
+.dq-done-ic svg{ width:28px; height:28px; }
+.dq-done b{ display:block; font-size:15px; color:var(--navy-dark); margin-bottom:2px; }
+.dq-done span{ font-size:12.5px; color:var(--muted); }
+body.dark .dq-ring::before{ background:#1a2b4d; box-shadow:0 1px 4px rgba(0,0,0,.3) inset; }
+body.dark .dq-ring-num{ color:#dbe6ff; }
+body.dark .dq-pill{ background:rgba(120,145,195,.14); }
+body.dark .dq-pill b{ color:#cfe0ff; }
+body.dark .dq-cat{ background:linear-gradient(150deg, rgba(40,58,100,.6), rgba(28,42,76,.4)); border-color:rgba(120,145,195,.3); }
+body.dark .dq-sum-name{ color:#dbe6ff; }
+body.dark .dq-org{ background:rgba(40,56,92,.5); border-color:rgba(120,145,195,.3); }
+body.dark .dq-org-name{ color:#dbe6ff; }
+body.dark .dq-done b{ color:#dbe6ff; }
+@media (max-width:600px){
+  .dq-org{ flex-wrap:wrap; gap:6px 10px; }
+  .dq-org-name{ flex:1 1 100%; white-space:normal; }
+  .dq-tags{ justify-content:flex-start; }
+  .dq-go{ display:none; }
+  .dq-head{ gap:12px; }
+}
