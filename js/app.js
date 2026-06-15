@@ -117,6 +117,48 @@
   const searchInput = document.getElementById('globalSearch');
 
   // Server rejimida tahrirlarni umumiy bazaga yozish (e'lon ham saqlanadi)
+  /* ---------- (6) Audit jurnali — superadmin tahrirlarini snapshotga nisbatan qayd etish ---------- */
+  let editSnap = null;
+  function telStrC(p) { return ((p && p.tel) || []).filter(Boolean).join(', '); }
+  function diffDistrictsClient(oldArr, newArr, login) {
+    const rows = []; const ROLES = [['r', 'Rahbar'], ['k', 'Kadrlar'], ['b', 'Buxgalter']];
+    (newArr || []).forEach(nd => {
+      const od = (oldArr || []).find(x => x.id === nd.id); if (!od) return;
+      const dn = nd.name, oO = od.orgs || [], nO = nd.orgs || [];
+      for (let i = 0; i < Math.max(oO.length, nO.length); i++) {
+        const o = oO[i], nw = nO[i];
+        if (o && !nw) { rows.push({ login, district: dn, kind: 'org-del', ref: o.org, field: 'tashkilot', old_val: o.org, new_val: '' }); continue; }
+        if (!o && nw) { rows.push({ login, district: dn, kind: 'org-add', ref: nw.org, field: 'tashkilot', old_val: '', new_val: nw.org }); continue; }
+        if (!o || !nw) continue;
+        if (o.org !== nw.org) rows.push({ login, district: dn, kind: 'org', ref: nw.org, field: 'tashkilot nomi', old_val: o.org, new_val: nw.org });
+        ROLES.forEach(([role, lbl]) => {
+          const op = o[role] || {}, np = nw[role] || {};
+          if ((op.fio || '') !== (np.fio || '')) rows.push({ login, district: dn, kind: 'org', ref: nw.org, field: lbl + ' F.I.O.', old_val: op.fio || '', new_val: np.fio || '' });
+          if (telStrC(op) !== telStrC(np)) rows.push({ login, district: dn, kind: 'org', ref: nw.org, field: lbl + ' telefon', old_val: telStrC(op), new_val: telStrC(np) });
+        });
+      }
+      const oM = od.markaz || [], nM = nd.markaz || [];
+      for (let i = 0; i < Math.max(oM.length, nM.length); i++) {
+        const o = oM[i], nw = nM[i];
+        if (o && !nw) { rows.push({ login, district: dn, kind: 'staff-del', ref: o.fio, field: 'markaz xodimi', old_val: o.fio, new_val: '' }); continue; }
+        if (!o && nw) { rows.push({ login, district: dn, kind: 'staff-add', ref: nw.fio, field: 'markaz xodimi', old_val: '', new_val: nw.fio }); continue; }
+        if (!o || !nw) continue;
+        if ((o.fio || '') !== (nw.fio || '')) rows.push({ login, district: dn, kind: 'staff', ref: nw.fio || o.fio, field: 'markaz F.I.O.', old_val: o.fio || '', new_val: nw.fio || '' });
+        if (telStrC(o) !== telStrC(nw)) rows.push({ login, district: dn, kind: 'staff', ref: nw.fio, field: 'markaz telefon', old_val: telStrC(o), new_val: telStrC(nw) });
+        if ((o.tug || '') !== (nw.tug || '')) rows.push({ login, district: dn, kind: 'staff', ref: nw.fio, field: 'tugʻilgan sana', old_val: o.tug || '', new_val: nw.tug || '' });
+      }
+    });
+    return rows.slice(0, 300);
+  }
+  async function logEdits() {
+    if (!(authCtx && authCtx.profile && authCtx.profile.is_admin)) return; // staff tahrirlari serverda (staff-edit) qayd etiladi
+    if (!editSnap) { editSnap = JSON.parse(JSON.stringify(DATA.districts)); return; }
+    const rows = diffDistrictsClient(editSnap, DATA.districts, authCtx.profile.login || 'admin');
+    editSnap = JSON.parse(JSON.stringify(DATA.districts));
+    if (rows.length) { try { await authCtx.client.from('edit_log').insert(rows); } catch (_) {} }
+  }
+
+  // Server rejimida tahrirlarni umumiy bazaga yozish (e'lon ham saqlanadi)
   async function pushData() {
     if (!authCtx) return;
     const clean = JSON.parse(JSON.stringify({ districts: DATA.districts, announcement: DATA.announcement || null, buyruqlar: DATA.buyruqlar || null, templates: DATA.templates || null },
@@ -124,7 +166,8 @@
     const { error } = await authCtx.client.from('site_data')
       .update({ data: clean, updated_by: authCtx.profile ? authCtx.profile.login : 'admin', updated_at: new Date().toISOString() })
       .eq('id', 1);
-    if (error) alert('Saqlashda xatolik: ' + error.message);
+    if (error) { alert('Saqlashda xatolik: ' + error.message); return; }
+    try { await logEdits(); } catch (_) {}
   }
 
   /* ---------- Rol va huquq: superadmin (Viloyat) hammasini, tuman xodimi faqat o'z hududini ---------- */
@@ -189,6 +232,8 @@
       });
     });
   })();
+  // Audit jurnali uchun boshlangʻich holat (superadmin tahrirlari shu nusxaga nisbatan taqqoslanadi)
+  if (authCtx && authCtx.profile && authCtx.profile.is_admin) editSnap = JSON.parse(JSON.stringify(DATA.districts));
 
   const esc = s => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1287,6 +1332,55 @@
       </div>`;
   }
 
+  /* ---------- (6) Tahrirlar jurnali (faqat admin) ---------- */
+  function alFmtDate(iso) { const d = new Date(iso); const p = n => String(n).padStart(2, '0'); return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+  function alRow(r) {
+    const k = r.kind || ''; const add = /add$/.test(k), del = /del$/.test(k);
+    const what = del ? `<b>${esc(r.field || '')}</b> oʻchirildi` : add ? `<b>${esc(r.field || '')}</b> qoʻshildi: <ins>${esc(r.new_val || '')}</ins>` : `<b>${esc(r.field || '')}</b>: <del>${esc(r.old_val || '—')}</del> <span class="al-arr">→</span> <ins>${esc(r.new_val || '—')}</ins>`;
+    return `<div class="al-row ${add ? 'add' : del ? 'del' : 'mod'}">
+      <span class="al-when">${alFmtDate(r.created_at)}</span>
+      <span class="al-who">${esc(r.login || '—')}</span>
+      <span class="al-where">${esc(r.district || '')}${r.ref ? ' · ' + esc(r.ref) : ''}</span>
+      <span class="al-what">${what}</span>
+    </div>`;
+  }
+  async function renderAuditLog() {
+    if (!(authCtx && authCtx.profile && authCtx.profile.is_admin)) { renderHome(); return; }
+    app.innerHTML = `
+      <section class="dist-head rv">
+        <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Tahrirlar jurnali</div>
+        <h1>Tahrirlar jurnali</h1>
+        <div class="sub">Maʼlumotnomaga kiritilgan oʻzgarishlar tarixi — kim, qachon, nimani oʻzgartirgani</div>
+      </section>
+      <div class="stat-panel rv" id="alPanel"><div class="al-empty">Yuklanmoqda...</div></div>`;
+    enhance();
+    try {
+      const { data, error } = await authCtx.client.from('edit_log').select('*').order('created_at', { ascending: false }).limit(500);
+      const panel = document.getElementById('alPanel');
+      if (!panel) return;
+      if (error) { panel.innerHTML = `<div class="al-empty">Jurnalni oʻqib boʻlmadi: ${esc(error.message)}</div>`; return; }
+      if (!data || !data.length) { panel.innerHTML = '<div class="al-empty">Hozircha oʻzgarishlar qayd etilmagan. Birinchi tahrirdan soʻng shu yerda koʻrinadi.</div>'; return; }
+      const dists = [...new Set(data.map(r => r.district).filter(Boolean))].sort();
+      const logins = [...new Set(data.map(r => r.login).filter(Boolean))].sort();
+      panel.innerHTML = `
+        <div class="al-filters">
+          <select id="alDist" class="al-sel"><option value="">Barcha hududlar</option>${dists.map(d => `<option>${esc(d)}</option>`).join('')}</select>
+          <select id="alUser" class="al-sel"><option value="">Barcha foydalanuvchilar</option>${logins.map(l => `<option>${esc(l)}</option>`).join('')}</select>
+          <span class="al-count" id="alCount"></span>
+        </div>
+        <div class="al-list" id="alList"></div>`;
+      const draw = () => {
+        const fd = document.getElementById('alDist').value, fu = document.getElementById('alUser').value;
+        const rows = data.filter(r => (!fd || r.district === fd) && (!fu || r.login === fu));
+        document.getElementById('alCount').textContent = `${rows.length} ta yozuv`;
+        document.getElementById('alList').innerHTML = rows.length ? rows.map(alRow).join('') : '<div class="al-empty">Mos yozuv topilmadi.</div>';
+      };
+      document.getElementById('alDist').addEventListener('change', draw);
+      document.getElementById('alUser').addEventListener('change', draw);
+      draw();
+    } catch (e) { const panel = document.getElementById('alPanel'); if (panel) panel.innerHTML = `<div class="al-empty">Xatolik: ${esc(e.message)}</div>`; }
+  }
+
   function renderStats() {
     const totals = { maktab: 0, dmtt: 0, other: 0 };
     DATA.districts.forEach(d => d.orgs.forEach(o => totals[catOfOrg(o)]++));
@@ -1897,6 +1991,9 @@
     } else if (/^#\/shablonlar/.test(hash)) {
       renderNav('tpl');
       renderTemplates();
+    } else if (/^#\/jurnal/.test(hash)) {
+      renderNav(null);
+      renderAuditLog();
     } else {
       renderNav(null);
       renderHome();
@@ -2723,6 +2820,8 @@
   if (authCtx && authCtx.profile && authCtx.profile.is_admin) {
     const uBtn = document.getElementById('adminUsers');
     uBtn.hidden = false;
+    const logBtn = document.getElementById('adminLog');
+    if (logBtn) { logBtn.hidden = false; logBtn.addEventListener('click', () => setDrawer(false)); }
 
     /* E'lon (banner) boshqaruvi */
     const annBtn = document.getElementById('adminAnnounce');

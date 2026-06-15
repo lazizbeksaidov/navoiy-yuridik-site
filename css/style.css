@@ -2917,3 +2917,31 @@ body.dark .dv-in{ background:rgba(20,32,60,.7); color:#dbe6ff; border-color:rgba
 body.dark .greet-box h5{ color:#dbe6ff; }
 body.dark .greet-body{ background:rgba(20,32,60,.6); color:#e3ecff; border-color:rgba(120,145,195,.3); }
 body.dark .greet-btn{ background:rgba(42,60,102,.6); color:#dbe6ff; border-color:rgba(120,145,195,.35); }
+
+/* ===================== (6) Tahrirlar jurnali ===================== */
+.al-filters{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+.al-sel{ font:inherit; font-size:13px; font-weight:600; padding:8px 12px; border-radius:11px; border:1px solid var(--glass-border); background:rgba(255,255,255,.7); color:var(--navy-dark); cursor:pointer; }
+.al-count{ font-size:12.5px; font-weight:700; color:var(--muted); margin-left:auto; }
+.al-list{ display:flex; flex-direction:column; gap:7px; }
+.al-row{ display:grid; grid-template-columns: 130px 110px minmax(120px,1.3fr) minmax(180px,2fr); align-items:center; gap:12px;
+  padding:10px 14px; border-radius:12px; background:rgba(255,255,255,.55); border:1px solid var(--glass-border); position:relative; }
+.al-row::before{ content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:3px; background:var(--navy-light); }
+.al-row.add::before{ background:var(--green); } .al-row.del::before{ background:#c0492f; }
+.al-when{ font-size:12px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums; }
+.al-who{ font-size:12.5px; font-weight:800; color:var(--navy); font-family:'Manrope',sans-serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.al-where{ font-size:12.5px; font-weight:600; color:var(--navy-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.al-what{ font-size:13px; color:var(--text); line-height:1.45; }
+.al-what b{ color:var(--navy-dark); }
+.al-what del{ color:#c0492f; text-decoration:line-through; opacity:.85; }
+.al-what ins{ color:var(--green); text-decoration:none; font-weight:700; }
+.al-arr{ color:var(--muted); margin:0 2px; }
+.al-empty{ text-align:center; color:var(--muted); padding:26px 10px; font-size:13.5px; }
+body.dark .al-sel{ background:rgba(42,60,102,.55); color:#dbe6ff; border-color:rgba(120,145,195,.35); }
+body.dark .al-row{ background:rgba(40,56,92,.45); border-color:rgba(120,145,195,.28); }
+body.dark .al-who{ color:#cfe0ff; } body.dark .al-where, body.dark .al-what b{ color:#dbe6ff; }
+body.dark .al-what del{ color:#f0a08c; } body.dark .al-what ins{ color:#6fd0a3; }
+@media (max-width:740px){
+  .al-row{ grid-template-columns:1fr 1fr; gap:4px 10px; }
+  .al-what{ grid-column:1 / -1; }
+  .al-where{ grid-column:1 / -1; }
+}
