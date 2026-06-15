@@ -732,14 +732,27 @@
         buyHits.push({ ci, c, links: catMatch ? (c.links || []) : links, docs: catMatch ? (c.docs || []) : docs });
     });
 
+    // Shablonlar boʻyicha qidiruv (nom boʻyicha)
+    const tplHits = (DATA.templates || []).map((t, i) => ({ t, i })).filter((x) => (x.t.n || '').toLowerCase().includes(ql)).slice(0, 30);
+
     let html = `<section class="dist-head rv">
       <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Qidiruv</div>
       <h1>Qidiruv natijalari: «${esc(q)}»</h1>
-      <div class="sub">${staffHits.length} markaz xodimi, ${orgHits.length} tashkilot${buyHits.length ? `, ${buyHits.length} buyruq boʻlimi` : ''} topildi</div>
+      <div class="sub">${staffHits.length} markaz xodimi, ${orgHits.length} tashkilot${buyHits.length ? `, ${buyHits.length} hujjat boʻlimi` : ''}${tplHits.length ? `, ${tplHits.length} shablon` : ''} topildi</div>
     </section>`;
 
-    if (!staffHits.length && !orgHits.length && !buyHits.length) {
+    if (!staffHits.length && !orgHits.length && !buyHits.length && !tplHits.length) {
       html += '<div class="no-results">Hech narsa topilmadi. Qidiruv soʻzini oʻzgartirib koʻring.</div>';
+    }
+
+    if (tplHits.length) {
+      html += `<h2 class="section-title"><span class="bar"></span>Shablonlar <span class="count">${tplHits.length}</span></h2>
+        <div class="ord-links" style="margin-bottom:14px">
+          ${tplHits.map((x) => x.t.u
+            ? `<div class="ord-link"><a href="${esc(x.t.u)}" target="_blank" rel="noopener noreferrer">${ORD_ICONS.link}<span>${esc(x.t.n)}</span>${ORD_ICONS.ext}</a></div>`
+            : `<div class="ord-link"><a href="#/shablonlar">${ORD_ICONS.link}<span>${esc(x.t.n)}</span></a></div>`
+          ).join('')}
+        </div>`;
     }
 
     if (buyHits.length) {
@@ -1590,11 +1603,31 @@
     </div>`;
   }
 
+  function tplLinkHTML(t, i) {
+    return `<div class="ord-link">
+      <a href="${esc(t.u)}" target="_blank" rel="noopener noreferrer">${ORD_ICONS.link}<span>${esc(t.n)}</span>${ORD_ICONS.ext}</a>
+      ${SUPER ? `<button class="ord-x" data-tpl="del" data-ti="${i}" title="Oʻchirish">${ORD_ICONS.x}</button>` : ''}
+    </div>`;
+  }
+  function tplCatHTML(catName, items) {
+    const links = items.filter((x) => x.t.u), files = items.filter((x) => !x.t.u);
+    return `<details class="ord-cat">
+      <summary>
+        <span class="ord-cat-t"><span class="ord-ic">${TPL_ICON}</span><b>${esc(catName)}</b></span>
+        <span class="ord-meta"><span class="ord-pill">${ORD_ICONS.miniFile}${items.length}</span><span class="ord-chev"><span class="cv cv-d">${ORD_ICONS.chevD}</span><span class="cv cv-u">${ORD_ICONS.chevU}</span></span></span>
+      </summary>
+      <div class="ord-body">
+        ${links.length ? `<div class="ord-links">${links.map((x) => tplLinkHTML(x.t, x.i)).join('')}</div>` : ''}
+        ${files.length ? `<div class="doc-list" style="margin-top:8px">${files.map((x) => tplRow(x.t, x.i)).join('')}</div>` : ''}
+      </div>
+    </details>`;
+  }
+  const TPL_ORDER = ['Shartnomalar', 'Arizalar', 'Notarial hujjatlar', 'Sud hujjatlari', 'Korporativ hujjatlar', 'Boshqa hujjatlar'];
   function renderTemplates() {
     const tpls = DATA.templates || [];
     const groups = {};
-    tpls.forEach((t, i) => { const c = (t.cat || 'Umumiy').trim() || 'Umumiy'; (groups[c] = groups[c] || []).push({ t, i }); });
-    const cats = Object.keys(groups);
+    tpls.forEach((t, i) => { const c = (t.cat || 'Boshqa hujjatlar').trim() || 'Boshqa hujjatlar'; (groups[c] = groups[c] || []).push({ t, i }); });
+    const cats = [...TPL_ORDER.filter((c) => groups[c]), ...Object.keys(groups).filter((c) => !TPL_ORDER.includes(c))];
     app.innerHTML = `
       <section class="dist-head rv ord-hero">
         <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Shablonlar</div>
@@ -1602,17 +1635,18 @@
           <span class="ord-hero-ic">${TPL_ICON}</span>
           <div class="ord-hero-txt">
             <h1>Namunaviy hujjat shablonlari</h1>
-            <div class="sub">Tayyor shablonlar — yuklab olib toʻldiring (shartnoma, ariza, buyruq va boshqalar)</div>
+            <div class="sub">Tayyor huquqiy hujjat namunalari — boʻlimni oching, keraklisini tanlab yuklab oling (manba: yurxizmat.uz, Adliya vazirligi)</div>
           </div>
+        </div>
+        <div class="ord-stats">
+          <div class="ord-stat"><b>${cats.length}</b><span>boʻlim</span></div>
+          <span class="ord-stat-div" aria-hidden="true"></span>
+          <div class="ord-stat"><b>${tpls.length}</b><span>shablon</span></div>
         </div>
       </section>
       <section class="ord-wrap rv">
-        ${tpls.length ? cats.map((c) => `
-          <div class="tpl-group">
-            <h2 class="section-title"><span class="bar"></span>${esc(c)} <span class="count">${groups[c].length}</span></h2>
-            <div class="doc-list">${groups[c].map((x) => tplRow(x.t, x.i)).join('')}</div>
-          </div>`).join('') : `<div class="ord-empty">Hozircha shablon yoʻq.${SUPER ? ' Quyidagi tugma orqali qoʻshing.' : ''}</div>`}
-        ${SUPER ? `<button class="ord-newcat" data-tpl="add">${ORD_ICONS.plus} Shablon qoʻshish</button>` : ''}
+        ${tpls.length ? cats.map((c) => tplCatHTML(c, groups[c])).join('') : `<div class="ord-empty">Hozircha shablon yoʻq.${SUPER ? ' Quyidagi tugma orqali qoʻshing.' : ''}</div>`}
+        ${SUPER ? `<button class="ord-newcat" data-tpl="add">${ORD_ICONS.plus} Shablon (fayl) qoʻshish</button>` : ''}
       </section>`;
     enhance();
     loadDocLinks();
