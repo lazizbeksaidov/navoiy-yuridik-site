@@ -743,7 +743,7 @@
     }
 
     if (buyHits.length) {
-      html += `<h2 class="section-title"><span class="bar"></span>Buyruqlar <span class="count">${buyHits.length}</span></h2>
+      html += `<h2 class="section-title"><span class="bar"></span>Hujjatlar <span class="count">${buyHits.length}</span></h2>
         <div class="sr-buy-wrap">`;
       buyHits.forEach(h => {
         const items = [
@@ -1484,11 +1484,11 @@
     const totDocs = cats.reduce((a, c) => a + ((c.docs && c.docs.length) || 0), 0);
     app.innerHTML = `
       <section class="dist-head rv ord-hero">
-        <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Buyruqlar</div>
+        <div class="breadcrumb"><a href="#/">Bosh sahifa</a> / Hujjatlar</div>
         <div class="ord-hero-main">
           <span class="ord-hero-ic">${ORDERS_ICON}</span>
           <div class="ord-hero-txt">
-            <h1>Yuqori turuvchi tashkilot buyruqlari</h1>
+            <h1>Yuqori turuvchi tashkilot hujjatlari</h1>
             <div class="sub">Yuqori turuvchi organlarning normativ-huquqiy hujjatlari hamda onlayn havolalari</div>
           </div>
         </div>
@@ -1660,7 +1660,7 @@
     navEl.innerHTML =
       `<a class="dchip${activeId === 'stats' ? ' active' : ''}" href="#/statistika">${CHART_ICON}Statistika</a>` +
       `<a class="dchip${activeId === 'bday' ? ' active' : ''}" href="#/tugilgan-kunlar">${ICONS.cake}Tugʻilgan kunlar</a>` +
-      `<a class="dchip${activeId === 'orders' ? ' active' : ''}" href="#/buyruqlar">${ORDERS_ICON}Buyruqlar</a>` +
+      `<a class="dchip${activeId === 'orders' ? ' active' : ''}" href="#/buyruqlar">${ORDERS_ICON}Hujjatlar</a>` +
       `<a class="dchip${activeId === 'tpl' ? ' active' : ''}" href="#/shablonlar">${TPL_ICON}Shablonlar</a>` +
       DATA.districts.map(d =>
         `<a class="dchip${d.id === activeId ? ' active' : ''}" href="#/hudud/${d.id}">${esc(d.name)}</a>`
