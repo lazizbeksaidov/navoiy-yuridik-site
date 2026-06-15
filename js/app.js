@@ -418,6 +418,10 @@
           <span class="bd-place">${ICONS.pin}${esc(d.name)}</span>
           <span class="bd-age"><i>${age}</i> yoshga toʻldi</span>
         </div>
+        <button class="bd-greet" type="button" data-greet data-name="${esc(s.fio)}" data-role="${esc(s.lavozim || '')}" data-dist="${esc(d.name)}" title="AI yordamida tabrik matni yaratish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+          AI tabrik
+        </button>
       </div>`).join('');
     const heading = list.length === 1 ? 'Tugʻilgan kun muborak boʻlsin!' : `Bugun ${list.length} hamkasbimizning tugʻilgan kuni`;
     return `
@@ -1242,6 +1246,47 @@
       </div>`;
   }
 
+  /* ---------- (3) Maʼlumot tekshiruvi — notoʻgʻri telefon raqamlari ---------- */
+  let DV_ISSUES = [];
+  function phoneValid(v) { const d = String(v || '').replace(/\D/g, ''); return d.length === 9 || (d.length === 12 && d.startsWith('998')); }
+  function phoneIssues() {
+    const out = [];
+    scopedDistricts().forEach(d => {
+      d.markaz.forEach((s, si) => (s.tel || []).forEach((t, ti) => { if (t && !phoneValid(t)) out.push({ did: d.id, t: 'staff', si, ti, value: t, ctx: `${d.name} · markaz · ${s.fio || ''}` }); }));
+      d.orgs.forEach((o, oi) => [['r', 'Rahbar'], ['k', 'Kadrlar'], ['b', 'Buxgalter']].forEach(([role, lbl]) => {
+        const p = o[role] || {}; (p.tel || []).forEach((t, ti) => { if (t && !phoneValid(t)) out.push({ did: d.id, t: 'org', oi, role, ti, value: t, ctx: `${d.name} · ${o.org} · ${lbl}` }); });
+      }));
+    });
+    return out;
+  }
+  function dataValidatorHTML() {
+    if (!authCtx || !(SUPER || MYDID)) return '';
+    DV_ISSUES = phoneIssues();
+    if (!DV_ISSUES.length) return dqDone({ h: 'Maʼlumot tekshiruvi', c: 'telefon', ok: 'Barcha telefon raqamlari toʻgʻri formatda' }, 'Notoʻgʻri uzunlikdagi yoki buzuq raqam topilmadi.');
+    const rows = DV_ISSUES.map((x, i) => `
+      <div class="dv-row" data-dvi="${i}">
+        <span class="dv-ctx">${esc(x.ctx)}</span>
+        <span class="dv-cur" title="Hozirgi (notoʻgʻri) qiymat">${esc(x.value)}</span>
+        <input class="dv-in" type="text" value="${esc(x.value)}" inputmode="tel" aria-label="Toʻgʻri raqam">
+        <span class="dv-sug" data-dvsug="${i}"></span>
+        <button class="dv-save" type="button" data-dvsave="${i}">Saqlash</button>
+      </div>`).join('');
+    return `
+      <h2 class="section-title rv"><span class="bar"></span>Maʼlumot tekshiruvi <span class="count">${DV_ISSUES.length} ta shubhali</span></h2>
+      <div class="stat-panel rv">
+        <div class="dq-head">
+          <div class="dq-head-txt">
+            <h3><span class="dot9"></span>Notoʻgʻri telefon raqamlari</h3>
+            <p class="dq-note">Quyidagi raqamlar Oʻzbekiston formatiga (9 yoki 998+9 xona) mos emas. Toʻgʻri raqamni kiriting va saqlang. «AI tekshiruv» faqat format/imlo maslahatini beradi — raqamni hech qachon oʻzi oʻylab topmaydi.</p>
+          </div>
+          <button class="dx-btn" id="dvAi" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+            AI tekshiruv</button>
+        </div>
+        <div class="dv-list">${rows}</div>
+      </div>`;
+  }
+
   function renderStats() {
     const totals = { maktab: 0, dmtt: 0, other: 0 };
     DATA.districts.forEach(d => d.orgs.forEach(o => totals[catOfOrg(o)]++));
@@ -1390,6 +1435,7 @@
 
       ${gapWorklistHTML()}
       ${docMonitorHTML()}
+      ${dataValidatorHTML()}
 
       <h2 class="section-title rv"><span class="bar"></span>Shaharlar va tumanlar <span class="count">taqqoslash</span></h2>
       <div class="st-vs">
@@ -2263,6 +2309,100 @@
     const base = (d.name || 'hudud').replace(/[^\wЀ-ӿ]+/g, '_') + '_kontaktlar';
     if (ex.dataset.exp === 'vcf') downloadBlob(base + '.vcf', new Blob([rowsToVCF(rows)], { type: 'text/vcard;charset=utf-8' }));
     else downloadBlob(base + '.csv', new Blob([rowsToCSV(rows)], { type: 'text/csv;charset=utf-8' }));
+  });
+
+  /* ---------- (5) Tugʻilgan kun AI tabrigi ---------- */
+  const greetModal = document.createElement('div');
+  greetModal.className = 'qr-modal greet-modal';
+  greetModal.innerHTML = `<div class="qr-box greet-box">
+    <h5 id="greetName"></h5>
+    <div class="greet-eyebrow">AI tugʻilgan kun tabrigi</div>
+    <div class="greet-body" id="greetBody"></div>
+    <div class="greet-acts">
+      <button class="greet-btn primary" id="greetCopy" type="button">Nusxalash</button>
+      <button class="greet-btn" id="greetRegen" type="button">Qayta yaratish</button>
+      <button class="greet-btn" id="greetClose" type="button">Yopish</button>
+    </div>
+  </div>`;
+  document.body.appendChild(greetModal);
+  let greetCur = null;
+  greetModal.addEventListener('click', e => { if (e.target === greetModal || e.target.id === 'greetClose') greetModal.classList.remove('open'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') greetModal.classList.remove('open'); });
+  async function genGreeting() {
+    const b = document.getElementById('greetBody');
+    b.innerHTML = '<div class="greet-load"><i></i><i></i><i></i></div>';
+    const copyBtn = document.getElementById('greetCopy'); copyBtn.disabled = true;
+    try {
+      const { data: { session } } = await authCtx.client.auth.getSession();
+      const res = await fetch(CFG.url + '/functions/v1/chat', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: 'bday', payload: { name: greetCur.name, role: greetCur.role, district: greetCur.dist, alpha: isCyr() ? 'cyr' : 'lat' } })
+      });
+      const data = await res.json();
+      if (data.answer) { b.textContent = data.answer; copyBtn.disabled = false; }
+      else b.innerHTML = `<span class="greet-err">${esc(data.error || 'Xatolik yuz berdi.')}</span>`;
+    } catch (e) { b.innerHTML = '<span class="greet-err">Ulanishda xatolik.</span>'; }
+  }
+  document.addEventListener('click', e => {
+    const g = e.target.closest('[data-greet]');
+    if (g) {
+      greetCur = { name: g.dataset.name, role: g.dataset.role, dist: g.dataset.dist };
+      document.getElementById('greetName').textContent = isCyr() ? lat2cyr(greetCur.name) : greetCur.name;
+      greetModal.classList.add('open');
+      genGreeting();
+      return;
+    }
+    if (e.target.closest('#greetRegen')) { if (greetCur) genGreeting(); return; }
+    if (e.target.closest('#greetCopy')) {
+      const txt = document.getElementById('greetBody').textContent || '';
+      if (txt && navigator.clipboard) navigator.clipboard.writeText(txt).then(() => { const c = document.getElementById('greetCopy'); c.textContent = 'Nusxalandi'; setTimeout(() => c.textContent = 'Nusxalash', 1600); }).catch(() => {});
+      return;
+    }
+  });
+
+  /* ---------- (3) Maʼlumot tekshiruvi — saqlash + AI tekshiruv ---------- */
+  app.addEventListener('click', async e => {
+    const sv = e.target.closest('[data-dvsave]');
+    if (sv) {
+      const x = DV_ISSUES[+sv.dataset.dvsave]; if (!x) return;
+      const row = sv.closest('.dv-row'); const val = row.querySelector('.dv-in').value.trim();
+      if (!val) { alert('Raqam boʻsh boʻlishi mumkin emas.'); return; }
+      if (!phoneValid(val) && !confirm('Bu raqam ham standart formatда emas (9 yoki 998+9 xona). Baribir saqlansinmi?')) return;
+      const d = DATA.districts.find(z => z.id === x.did); if (!d) return;
+      if (x.t === 'staff') d.markaz[x.si].tel[x.ti] = val; else d.orgs[x.oi][x.role].tel[x.ti] = val;
+      sv.disabled = true; sv.textContent = '...';
+      try { await saveData(x.did); row.classList.add('dv-done'); sv.textContent = 'Saqlandi'; }
+      catch (err) { sv.disabled = false; sv.textContent = 'Saqlash'; alert('Saqlashda xatolik.'); }
+      return;
+    }
+    const ap = e.target.closest('[data-dvapply]');
+    if (ap) { const row = ap.closest('.dv-row'); if (row) row.querySelector('.dv-in').value = ap.dataset.val; return; }
+    const ai = e.target.closest('#dvAi');
+    if (ai) {
+      ai.disabled = true; const old = ai.textContent; ai.textContent = 'Tekshirilmoqda...';
+      try {
+        const { data: { session } } = await authCtx.client.auth.getSession();
+        const items = DV_ISSUES.map((x, i) => ({ id: i, kind: 'phone', value: x.value, context: x.ctx }));
+        const res = await fetch(CFG.url + '/functions/v1/chat', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + session.access_token, 'apikey': CFG.anonKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task: 'fixdata', payload: { items } })
+        });
+        const data = await res.json();
+        (data.suggestions || []).forEach(s => {
+          const sug = document.querySelector(`[data-dvsug="${s.id}"]`); if (!sug) return;
+          // XAVFSIZLIK: taklif faqat haqiqatan toʻgʻri formatда (9 yoki 998+9 xona) boʻlsagina «qoʻllash» sifatida koʻrsatiladi.
+          // AI notoʻgʻri uzunlikdagi raqamni «qayta formatlagan» boʻlsa — qoʻllash berilmaydi, qoʻlda tuzatishga yoʻnaltiriladi.
+          if (s.status === 'reformat' && s.suggestion && phoneValid(s.suggestion))
+            sug.innerHTML = `<button class="dv-apply" type="button" data-dvapply="${s.id}" data-val="${esc(s.suggestion)}">${esc(s.suggestion)}</button>`;
+          else if (s.status === 'suspect') sug.innerHTML = `<span class="dv-flag">${esc(s.note || 'shubhali')}</span>`;
+          else sug.innerHTML = '<span class="dv-flag">qoʻlda tuzating</span>';
+        });
+        ai.disabled = false; ai.textContent = old;
+      } catch (err) { ai.disabled = false; ai.textContent = old; alert('AI tekshiruvда xatolik.'); }
+      return;
+    }
   });
 
   /* ---------- Parallax (sichqoncha) ---------- */
