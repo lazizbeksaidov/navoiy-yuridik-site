@@ -2030,31 +2030,13 @@
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       const q = searchInput.value;
-      if (q.trim().length >= 2) { renderNav(null); renderSearch(q); saveRecent(q.trim()); }
+      if (q.trim().length >= 2) { renderNav(null); renderSearch(q); }
       else route();
     }, 220);
   });
 
-  /* ---------- So'nggi qidiruvlar ---------- */
-  function getRecent() {
-    try { return JSON.parse(localStorage.getItem('recentq') || '[]'); } catch (e) { return []; }
-  }
-  function renderRecent() {
-    document.getElementById('searchHist').innerHTML =
-      getRecent().map(q => `<option value="${esc(q)}">`).join('');
-  }
-  let recentTimer;
-  function saveRecent(q) {
-    clearTimeout(recentTimer);
-    recentTimer = setTimeout(() => {
-      let list = getRecent().filter(x => x.toLowerCase() !== q.toLowerCase());
-      list.unshift(q);
-      list = list.slice(0, 8);
-      try { localStorage.setItem('recentq', JSON.stringify(list)); } catch (e) {}
-      renderRecent();
-    }, 1400);
-  }
-  renderRecent();
+  // So'nggi qidiruvlar tarixi olib tashlandi — eski saqlangan yozuvlarni brauzerdan tozalaymiz
+  try { localStorage.removeItem('recentq'); } catch (e) {}
 
   /* ---------- Tezkor klavishlar ---------- */
   document.addEventListener('keydown', e => {
